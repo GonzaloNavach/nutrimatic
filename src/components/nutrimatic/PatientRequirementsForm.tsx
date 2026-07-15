@@ -8,6 +8,8 @@ import {
   BIOAVAILABILITY_LABELS,
   GOAL_LABELS,
   RESIDENCE_LABELS,
+  computeImc,
+  imcCategoryLabel,
   type ActivityLevel,
   type Bioavailability,
   type EnergyGoal,
@@ -24,7 +26,7 @@ import {
   type RequirementCalcMeta,
 } from "@/lib/nutrition/patientRequirements";
 import type { Requirements } from "@/lib/nutrition/types";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import { Calculator, ChevronDown } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
@@ -50,6 +52,10 @@ export function PatientRequirementsForm({
   const [error, setError] = useState<string | null>(null);
 
   const gate = useMemo(() => canCalculateRequirements(profile), [profile]);
+  const imc = useMemo(
+    () => computeImc(profile.weightKg, profile.heightCm),
+    [profile.weightKg, profile.heightCm]
+  );
 
   function patch(partial: Partial<PatientProfile>) {
     onProfileChange({ ...profile, ...partial });
@@ -140,6 +146,22 @@ export function PatientRequirementsForm({
                   : null,
               })
             }
+          />
+        </Field>
+
+        <Field label="IMC" htmlFor="pat-imc">
+          <Input
+            id="pat-imc"
+            readOnly
+            tabIndex={-1}
+            aria-live="polite"
+            value={
+              imc != null
+                ? `${formatNumber(imc, 1)} · ${imcCategoryLabel(imc)}`
+                : ""
+            }
+            placeholder="Con peso y talla"
+            className="cursor-default bg-muted/40 text-muted-foreground"
           />
         </Field>
 
