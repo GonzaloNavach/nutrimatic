@@ -84,3 +84,21 @@ export function formatPatientSummary(profile: PatientProfile): string | null {
   }
   return parts.join(" · ");
 }
+
+/** IMC = kg / m²; null si faltan peso o talla. */
+export function computeImc(
+  weightKg: number | null | undefined,
+  heightCm: number | null | undefined
+): number | null {
+  if (weightKg == null || weightKg <= 0) return null;
+  if (heightCm == null || heightCm <= 0) return null;
+  const m = heightCm / 100;
+  return Math.round((weightKg / (m * m)) * 10) / 10;
+}
+
+export function imcCategoryLabel(imc: number): string {
+  if (imc < 18.5) return "Bajo peso";
+  if (imc < 25) return "Normal";
+  if (imc < 30) return "Sobrepeso";
+  return "Obesidad";
+}

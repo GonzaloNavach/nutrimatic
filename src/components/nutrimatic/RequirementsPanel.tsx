@@ -17,7 +17,9 @@ import {
 } from "@/lib/nutrition/nutrientGroups";
 import {
   DEFAULT_PATIENT_PROFILE,
+  computeImc,
   formatPatientSummary,
+  imcCategoryLabel,
   type PatientProfile,
 } from "@/lib/nutrition/patientProfile";
 import type { RequirementCalcMeta } from "@/lib/nutrition/patientRequirements";
@@ -170,7 +172,7 @@ function RequirementsForm({
         </div>
       </div>
 
-      <RequirementsKpiReadonly value={value} meta={calcMeta} />
+      <PatientImcReadonly profile={profile} meta={calcMeta} />
 
       <div className="rounded-md border">
         <button
@@ -207,56 +209,33 @@ function RequirementsForm({
   );
 }
 
-function RequirementsKpiReadonly({
-  value,
+function PatientImcReadonly({
+  profile,
   meta,
 }: {
-  value: Requirements;
+  profile: PatientProfile;
   meta: RequirementCalcMeta | null;
 }) {
-  const tiles: Array<{ label: string; display: string; hint?: string }> = [
-    {
-      label: "Energía",
-      display:
-        value.energy > 0 ? `${formatNumber(value.energy, 0)} kcal` : "—",
-    },
-    {
-      label: "Proteína",
-      display:
-        value.proteinTotal > 0
-          ? `${formatNumber(value.proteinTotal, 1)} g`
-          : "—",
-    },
-    {
-      label: "Carbohidratos",
-      display: value.carbs > 0 ? `${formatNumber(value.carbs, 1)} g` : "—",
-    },
-    {
-      label: "Grasa",
-      display:
-        value.fatTotal > 0 ? `${formatNumber(value.fatTotal, 1)} g` : "—",
-    },
-  ];
+  const imc =
+    meta?.imc ?? computeImc(profile.weightKg, profile.heightCm);
 
   return (
     <div className="space-y-2">
       <p className="text-xs font-medium text-muted-foreground">
-        Resumen para el nutricionista
+        Dato para el nutricionista
       </p>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {tiles.map((tile) => (
-          <div
-            key={tile.label}
-            className="rounded-lg border bg-muted/15 px-3 py-2.5"
-          >
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {tile.label}
-            </p>
-            <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight">
-              {tile.display}
-            </p>
-          </div>
-        ))}
+      <div className="rounded-lg border bg-muted/15 px-3 py-2.5 sm:max-w-xs">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          IMC
+        </p>
+        <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight">
+          {imc != null ? formatNumber(imc, 1) : "—"}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {imc != null
+            ? imcCategoryLabel(imc)
+            : "Ingresá peso y talla en el paciente"}
+        </p>
       </div>
       {meta && meta.errors.length === 0 ? (
         <p className="text-xs text-muted-foreground">
@@ -264,7 +243,6 @@ function RequirementsKpiReadonly({
             <>
               TMB {meta.bmr} kcal · PAL {meta.pal} · GET≈{meta.teeBeforeAdjust}{" "}
               kcal
-              {meta.imc != null ? ` · IMC ${meta.imc}` : ""}
             </>
           ) : (
             <>Energía desde tabla CENAN</>
