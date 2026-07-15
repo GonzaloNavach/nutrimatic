@@ -119,48 +119,46 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
             />
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
-            <div className="space-y-4">
-              <ColumnLayoutToolbar
-                columnsLocked={columnsLocked}
-                tipSeen={tipSeen}
-                onToggleLock={toggleColumnsLock}
-                onResetColumns={resetColumns}
-              />
-              {columnsEditable ? (
-                <HiddenColumnsBar
-                  hiddenColumns={hiddenColumns}
-                  onShow={showColumn}
-                />
-              ) : null}
-              {meals.map((meal) => (
-                <MealBlockCard
-                  key={meal.id}
-                  meal={meal}
-                  foods={foods}
-                  foodMap={foodMap}
-                  visibleColumns={visibleColumns}
-                  hiddenColumns={hiddenColumns}
-                  columnsEditable={columnsEditable}
-                  onHideColumn={hideColumn}
-                  onShowColumn={showColumn}
-                  onChange={(nextMeal) =>
-                    setMeals((prev) =>
-                      prev.map((item) =>
-                        item.id === nextMeal.id ? nextMeal : item
-                      )
-                    )
-                  }
-                />
-              ))}
-            </div>
-
-            <PlanSidePanel
-              requirements={requirements}
-              onRequirementsChange={setRequirements}
-              adequacyRows={adequacyRows}
+          <div className="space-y-4">
+            <ColumnLayoutToolbar
+              columnsLocked={columnsLocked}
+              tipSeen={tipSeen}
+              onToggleLock={toggleColumnsLock}
+              onResetColumns={resetColumns}
             />
+            {columnsEditable ? (
+              <HiddenColumnsBar
+                hiddenColumns={hiddenColumns}
+                onShow={showColumn}
+              />
+            ) : null}
+            {meals.map((meal) => (
+              <MealBlockCard
+                key={meal.id}
+                meal={meal}
+                foods={foods}
+                foodMap={foodMap}
+                visibleColumns={visibleColumns}
+                hiddenColumns={hiddenColumns}
+                columnsEditable={columnsEditable}
+                onHideColumn={hideColumn}
+                onShowColumn={showColumn}
+                onChange={(nextMeal) =>
+                  setMeals((prev) =>
+                    prev.map((item) =>
+                      item.id === nextMeal.id ? nextMeal : item
+                    )
+                  )
+                }
+              />
+            ))}
           </div>
+
+          <PlanSidePanel
+            requirements={requirements}
+            onRequirementsChange={setRequirements}
+            adequacyRows={adequacyRows}
+          />
         </div>
       </div>
     </div>

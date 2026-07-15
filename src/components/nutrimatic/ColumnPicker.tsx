@@ -1,24 +1,85 @@
 "use client";
 
+import {
+  CollapsibleCategoryGroups,
+  toggleExpandedId,
+} from "@/components/nutrimatic/CollapsibleCategoryGroups";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { MealColumnDef } from "@/lib/nutrition/mealColumns";
+import {
+  COLUMN_NUTRIENT_GROUP,
+  DEFAULT_OPEN_NUTRIENT_GROUPS,
+  NUTRIENT_GROUPS,
+} from "@/lib/nutrition/nutrientGroups";
 import { cn } from "@/lib/utils";
-import { Lock, LockOpen, Plus, RotateCcw } from "lucide-react";
+import { Lock, LockOpen, Plus, RotateCcw, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 
 interface ColumnAddMenuProps {
   hiddenColumns: MealColumnDef[];
   onShow: (id: MealColumnDef["id"]) => void;
 }
 
-/** “+” anclado a la tabla: agregar columnas ocultas. */
+/** “+” anclado a la tabla: agregar columnas ocultas por categoría. */
 export function ColumnAddMenu({ hiddenColumns, onShow }: ColumnAddMenuProps) {
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState(
+    () => new Set<string>(DEFAULT_OPEN_NUTRIENT_GROUPS)
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return hiddenColumns.filter((col) => {
+      if (!q) return true;
+      return (
+        col.label.toLowerCase().includes(q) ||
+        col.id.toLowerCase().includes(q) ||
+        col.unit.toLowerCase().includes(q)
+      );
+    });
+  }, [hiddenColumns, query]);
+
+  const groups = useMemo(() => {
+    return NUTRIENT_GROUPS.map((group) => {
+      const items = filtered.filter(
+        (col) => COLUMN_NUTRIENT_GROUP[col.id] === group.id
+      );
+      return {
+        id: group.id,
+        label: group.label,
+        count: items.length,
+        children: items.map((col) => (
+          <button
+            key={col.id}
+            type="button"
+            className="flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+            onClick={() => onShow(col.id)}
+          >
+            {col.label}
+            {col.unit ? (
+              <span className="ml-1 text-muted-foreground">({col.unit})</span>
+            ) : null}
+          </button>
+        )),
+      };
+    }).filter((g) => g.count > 0);
+  }, [filtered, onShow]);
+
+  const total = filtered.length;
+
   return (
-    <Popover>
+    <Popover
+      onOpenChange={(open) => {
+        if (!open) setQuery("");
+        else setExpanded(new Set<string>(DEFAULT_OPEN_NUTRIENT_GROUPS));
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -29,31 +90,45 @@ export function ColumnAddMenu({ hiddenColumns, onShow }: ColumnAddMenuProps) {
           <Plus className="size-3.5" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-64 p-3">
-        <p className="mb-2 text-sm font-medium">Agregar columnas</p>
-        {hiddenColumns.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            Todas las columnas están visibles.
-          </p>
-        ) : (
-          <div className="max-h-56 space-y-1 overflow-y-auto">
-            {hiddenColumns.map((col) => (
-              <button
-                key={col.id}
-                type="button"
-                className="flex w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
-                onClick={() => onShow(col.id)}
-              >
-                {col.label}
-                {col.unit ? (
-                  <span className="ml-1 text-muted-foreground">
-                    ({col.unit})
-                  </span>
-                ) : null}
-              </button>
-            ))}
+      <PopoverContent align="end" className="w-[min(100vw-2rem,360px)] p-0">
+        <div className="border-b p-2">
+          <p className="mb-2 px-1 text-sm font-medium">Agregar columnas</p>
+          {hiddenColumns.length === 0 ? (
+            <p className="px-1 pb-1 text-xs text-muted-foreground">
+              Todas las columnas están visibles.
+            </p>
+          ) : (
+            <>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  placeholder="Filtrar nutrientes…"
+                  className="pl-8"
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              {query ? (
+                <p className="mt-1.5 px-1 text-xs text-muted-foreground">
+                  {total} columna{total !== 1 ? "s" : ""} en {groups.length}{" "}
+                  categoría{groups.length !== 1 ? "s" : ""}
+                </p>
+              ) : null}
+            </>
+          )}
+        </div>
+        {hiddenColumns.length > 0 ? (
+          <div className="max-h-72 overflow-y-auto">
+            <CollapsibleCategoryGroups
+              groups={groups}
+              expanded={expanded}
+              onToggle={(id) =>
+                setExpanded((prev) => toggleExpandedId(prev, id))
+              }
+              emptyMessage="Sin columnas que coincidan"
+            />
           </div>
-        )}
+        ) : null}
       </PopoverContent>
     </Popover>
   );
@@ -66,7 +141,7 @@ interface ColumnLayoutToolbarProps {
   onResetColumns: () => void;
 }
 
-/** Candado global + Vista original + tip de primera vez. */
+/** Candado global + reset a columnas base + tip de primera vez. */
 export function ColumnLayoutToolbar({
   columnsLocked,
   tipSeen,
@@ -83,12 +158,14 @@ export function ColumnLayoutToolbar({
           onClick={onToggleLock}
           aria-pressed={!columnsLocked}
           aria-label={
-            columnsLocked ? "Desbloquear columnas" : "Bloquear columnas"
+            columnsLocked
+              ? "Activar editar columnas"
+              : "Desactivar editar columnas"
           }
           title={
             columnsLocked
-              ? "Editar columnas"
-              : "Bloquear columnas (modo lectura)"
+              ? "Activar editar columnas"
+              : "Bloquear (modo lectura)"
           }
         >
           {columnsLocked ? (
@@ -96,20 +173,18 @@ export function ColumnLayoutToolbar({
           ) : (
             <LockOpen className="size-4" />
           )}
-          {columnsLocked ? "Columnas" : "Editando"}
+          Editar columnas
         </Button>
-        {!columnsLocked ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onResetColumns}
-            title="Volver a Alimento, Código, Gramos y Energía"
-          >
-            <RotateCcw className="size-4" />
-            Vista original
-          </Button>
-        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onResetColumns}
+          title="Volver a Alimento, Código, Gramos y Energía"
+        >
+          <RotateCcw className="size-4" />
+          Resetear columnas
+        </Button>
       </div>
       {columnsLocked && !tipSeen ? (
         <p

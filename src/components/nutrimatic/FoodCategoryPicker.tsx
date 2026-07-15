@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  CollapsibleCategoryGroups,
+  toggleExpandedId,
+} from "@/components/nutrimatic/CollapsibleCategoryGroups";
 import { Input } from "@/components/ui/input";
 import type { Food } from "@/lib/nutrition/types";
 import {
@@ -35,10 +39,7 @@ export function FoodCategoryPicker({
       const catId = food.categoryId || "miscelaneos";
       const list = map.get(catId);
       if (list) list.push(food);
-      else {
-        const fallback = map.get("otros")!;
-        fallback.push(food);
-      }
+      else map.get("miscelaneos")!.push(food);
     }
     return map;
   }, [foods]);
@@ -60,20 +61,9 @@ export function FoodCategoryPicker({
   useEffect(() => {
     if (!open) return;
     if (totalFiltered > 0 && totalFiltered <= AUTO_EXPAND_MAX_PRODUCTS) {
-      setExpanded(
-        new Set(filteredGroups.map((g) => g.category.id))
-      );
+      setExpanded(new Set(filteredGroups.map((g) => g.category.id)));
     }
-  }, [query, open, totalFiltered]); // eslint-disable-line react-hooks/exhaustive-deps -- expand on filter size only
-
-  const toggleCategory = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  }, [query, open, totalFiltered]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayLabel = value ? value.name : "Seleccionar alimento…";
 
@@ -125,67 +115,39 @@ export function FoodCategoryPicker({
               ) : null}
             </div>
 
-            <div className="max-h-72 overflow-y-auto p-1">
-              {filteredGroups.length === 0 ? (
-                <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                  Sin resultados
-                </p>
-              ) : (
-                filteredGroups.map(({ category, foods: catFoods }) => {
-                  const isExpanded = expanded.has(category.id);
-                  return (
-                    <div key={category.id} className="mb-0.5">
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-medium hover:bg-muted"
-                        onClick={() => toggleCategory(category.id)}
-                      >
-                        <ChevronDown
-                          className={cn(
-                            "size-4 shrink-0 text-muted-foreground transition-transform",
-                            isExpanded && "rotate-180"
-                          )}
-                        />
-                        <span className="min-w-0 flex-1 leading-snug">
-                          {category.label}
-                        </span>
-                        <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
-                          {catFoods.length}
-                        </span>
-                      </button>
-                      {isExpanded ? (
-                        <div className="ml-2 border-l border-border pl-1">
-                          {catFoods.map((food) => (
-                            <button
-                              key={food.id}
-                              type="button"
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
-                                value?.id === food.id && "bg-primary/10"
-                              )}
-                              onClick={() => {
-                                onSelect(food);
-                                setOpen(false);
-                                setQuery("");
-                              }}
-                            >
-                              <span className="w-12 shrink-0 font-mono text-xs text-muted-foreground">
-                                {food.code}
-                              </span>
-                              <span className="min-w-0 flex-1 truncate">
-                                {food.name}
-                              </span>
-                              <span className="shrink-0 text-xs text-muted-foreground">
-                                {food.energy}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })
-              )}
+            <div className="max-h-72 overflow-y-auto">
+              <CollapsibleCategoryGroups
+                groups={filteredGroups.map(({ category, foods: catFoods }) => ({
+                  id: category.id,
+                  label: category.label,
+                  count: catFoods.length,
+                  children: catFoods.map((food) => (
+                    <button
+                      key={food.id}
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted",
+                        value?.id === food.id && "bg-primary/10"
+                      )}
+                      onClick={() => {
+                        onSelect(food);
+                        setOpen(false);
+                        setQuery("");
+                      }}
+                    >
+                      <span className="w-12 shrink-0 font-mono text-xs text-muted-foreground">
+                        {food.code}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">{food.name}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {food.energy}
+                      </span>
+                    </button>
+                  )),
+                }))}
+                expanded={expanded}
+                onToggle={(id) => setExpanded((prev) => toggleExpandedId(prev, id))}
+              />
             </div>
           </div>
         </>

@@ -1,9 +1,20 @@
 "use client";
 
+import {
+  CollapsibleCategoryGroups,
+  toggleExpandedId,
+} from "@/components/nutrimatic/CollapsibleCategoryGroups";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DEFAULT_OPEN_NUTRIENT_GROUPS,
+  REQUIREMENT_NUTRIENT_GROUP,
+  REQUIREMENT_NUTRIENT_GROUPS,
+  type RequirementPanelKey,
+} from "@/lib/nutrition/nutrientGroups";
 import type { Requirements } from "@/lib/nutrition/types";
+import { useMemo, useState } from "react";
 
 interface RequirementsPanelProps {
   value: Requirements;
@@ -12,7 +23,7 @@ interface RequirementsPanelProps {
 }
 
 const fields: Array<{
-  key: keyof Requirements;
+  key: RequirementPanelKey;
   label: string;
   unit: string;
 }> = [
@@ -39,29 +50,54 @@ function RequirementsForm({
   value,
   onChange,
 }: Omit<RequirementsPanelProps, "embedded">) {
+  const [expanded, setExpanded] = useState(
+    () => new Set<string>(DEFAULT_OPEN_NUTRIENT_GROUPS)
+  );
+
+  const groups = useMemo(() => {
+    return REQUIREMENT_NUTRIENT_GROUPS.map((group) => {
+      const items = fields.filter(
+        (field) => REQUIREMENT_NUTRIENT_GROUP[field.key] === group.id
+      );
+      return {
+        id: group.id,
+        label: group.label,
+        count: items.length,
+        children: (
+          <div className="grid gap-3 py-1 sm:grid-cols-2">
+            {items.map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <Label htmlFor={`req-${field.key}`}>
+                  {field.label} ({field.unit})
+                </Label>
+                <Input
+                  id={`req-${field.key}`}
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={value[field.key] || ""}
+                  onChange={(e) =>
+                    onChange({
+                      ...value,
+                      [field.key]: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        ),
+      };
+    });
+  }, [value, onChange]);
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {fields.map((field) => (
-        <div key={field.key} className="space-y-1.5">
-          <Label htmlFor={`req-${field.key}`}>
-            {field.label} ({field.unit})
-          </Label>
-          <Input
-            id={`req-${field.key}`}
-            type="number"
-            min={0}
-            step="any"
-            value={value[field.key] || ""}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                [field.key]: Number.parseFloat(e.target.value) || 0,
-              })
-            }
-          />
-        </div>
-      ))}
-    </div>
+    <CollapsibleCategoryGroups
+      groups={groups}
+      expanded={expanded}
+      onToggle={(id) => setExpanded((prev) => toggleExpandedId(prev, id))}
+      className="p-0"
+    />
   );
 }
 

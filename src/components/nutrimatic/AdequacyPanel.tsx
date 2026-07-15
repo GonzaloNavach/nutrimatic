@@ -1,9 +1,20 @@
 "use client";
 
+import {
+  CollapsibleCategoryGroups,
+  toggleExpandedId,
+} from "@/components/nutrimatic/CollapsibleCategoryGroups";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DEFAULT_OPEN_NUTRIENT_GROUPS,
+  groupForRequirementKey,
+  REQUIREMENT_NUTRIENT_GROUPS,
+  type NutrientGroupId,
+} from "@/lib/nutrition/nutrientGroups";
 import type { AdequacyRow } from "@/lib/nutrition/types";
 import { cn, formatNumber } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 
 interface AdequacyPanelProps {
   rows: AdequacyRow[];
@@ -24,9 +35,9 @@ function statusLabel(status: AdequacyRow["status"]) {
   return "N/A";
 }
 
-function AdequacyTable({ rows }: { rows: AdequacyRow[] }) {
+function AdequacyRowsTable({ rows }: { rows: AdequacyRow[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto py-1">
       <table className="w-full min-w-[480px] text-sm">
         <thead>
           <tr className="border-b text-left">
@@ -70,12 +81,80 @@ function AdequacyTable({ rows }: { rows: AdequacyRow[] }) {
   );
 }
 
+function AdequacyGrouped({ rows }: { rows: AdequacyRow[] }) {
+  const alertGroupIds = useMemo(() => {
+    const ids = new Set<NutrientGroupId>();
+    for (const row of rows) {
+      if (row.status === "low" || row.status === "high") {
+        const groupId = groupForRequirementKey(row.key);
+        if (groupId) ids.add(groupId);
+      }
+    }
+    return ids;
+  }, [rows]);
+
+  const [expanded, setExpanded] = useState(() => {
+    const initial = new Set<string>(DEFAULT_OPEN_NUTRIENT_GROUPS);
+    for (const id of alertGroupIds) initial.add(id);
+    return initial;
+  });
+
+  useEffect(() => {
+    if (alertGroupIds.size === 0) return;
+    setExpanded((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const id of alertGroupIds) {
+        if (!next.has(id)) {
+          next.add(id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [alertGroupIds]);
+
+  const groups = useMemo(() => {
+    return REQUIREMENT_NUTRIENT_GROUPS.map((group) => {
+      const items = rows.filter(
+        (row) => groupForRequirementKey(row.key) === group.id
+      );
+      const alertCount = items.filter(
+        (row) => row.status === "low" || row.status === "high"
+      ).length;
+      return {
+        id: group.id,
+        label: group.label,
+        count: items.length,
+        trailing:
+          alertCount > 0 ? (
+            <span className="shrink-0 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs tabular-nums text-amber-800">
+              {alertCount} alerta{alertCount !== 1 ? "s" : ""}
+            </span>
+          ) : undefined,
+        children: <AdequacyRowsTable rows={items} />,
+      };
+    }).filter((g) => g.count > 0);
+  }, [rows]);
+
+  return (
+    <CollapsibleCategoryGroups
+      groups={groups}
+      expanded={expanded}
+      onToggle={(id) => setExpanded((prev) => toggleExpandedId(prev, id))}
+      className="p-0"
+    />
+  );
+}
+
 export function AdequacyPanel({ rows, embedded = false }: AdequacyPanelProps) {
   if (embedded) {
     return (
       <div>
-        <h3 className="mb-3 text-base font-semibold">Porcentaje de adecuación</h3>
-        <AdequacyTable rows={rows} />
+        <h3 className="mb-3 text-base font-semibold">
+          Porcentaje de adecuación
+        </h3>
+        <AdequacyGrouped rows={rows} />
       </div>
     );
   }
@@ -86,7 +165,7 @@ export function AdequacyPanel({ rows, embedded = false }: AdequacyPanelProps) {
         <CardTitle className="text-base">Porcentaje de adecuación</CardTitle>
       </CardHeader>
       <CardContent>
-        <AdequacyTable rows={rows} />
+        <AdequacyGrouped rows={rows} />
       </CardContent>
     </Card>
   );

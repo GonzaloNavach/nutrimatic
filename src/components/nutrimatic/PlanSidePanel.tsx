@@ -23,35 +23,31 @@ export function PlanSidePanel({
   const [tab, setTab] = useState("requirements");
 
   return (
-    <Card className="xl:sticky xl:top-6 xl:flex xl:max-h-[calc(100vh-5rem)] xl:flex-col">
-      <Tabs
-        value={tab}
-        onValueChange={setTab}
-        className="flex min-h-0 flex-1 flex-col"
-      >
+    <Card>
+      <Tabs value={tab} onValueChange={setTab} className="flex flex-col gap-0">
         <div className="border-b px-4 pt-4 pb-3">
-          <TabsList className="w-full">
+          <TabsList className="w-full max-w-md">
             <TabsTrigger value="requirements">Requerimientos</TabsTrigger>
             <TabsTrigger value="adequacy">Adecuación</TabsTrigger>
           </TabsList>
         </div>
 
-        <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+        <CardContent className="flex flex-col p-0">
           <TabsContent
             value="requirements"
-            className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+            className="mt-0 flex flex-col data-[state=inactive]:hidden"
           >
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+            <div className="px-4 py-3">
               <RequirementsPanel
                 embedded
                 value={requirements}
                 onChange={onRequirementsChange}
               />
             </div>
-            <div className="shrink-0 border-t p-4">
+            <div className="border-t p-4">
               <Button
                 type="button"
-                className="w-full"
+                className="w-full sm:w-auto"
                 size="lg"
                 onClick={() => setTab("adequacy")}
               >
@@ -63,7 +59,7 @@ export function PlanSidePanel({
 
           <TabsContent
             value="adequacy"
-            className="mt-0 min-h-0 flex-1 overflow-y-auto px-4 py-3 data-[state=inactive]:hidden"
+            className="mt-0 px-4 py-3 data-[state=inactive]:hidden"
           >
             <AdequacyPanel embedded rows={adequacyRows} />
           </TabsContent>
