@@ -7,6 +7,7 @@ import type {
   NutrientTotals,
   Requirements,
 } from "./types";
+import type { MealColumnId } from "./mealColumns";
 
 export const EMPTY_TOTALS: NutrientTotals = {
   grams: 0,
@@ -73,6 +74,86 @@ function foodProteinPer100(food: Food): number {
 function foodFatPer100(food: Food): number {
   if (food.fat != null && food.fat > 0) return food.fat;
   return food.fatAnimal + food.fatVegetal;
+}
+
+/** Densidad por 100 g del alimento para una columna (null = no invertible). */
+export function nutrientPer100(
+  food: Food,
+  columnId: MealColumnId
+): number | null {
+  switch (columnId) {
+    case "energy":
+      return food.energy;
+    case "water":
+      return food.water;
+    case "proteinTotal":
+      return foodProteinPer100(food);
+    case "fatTotal":
+      return foodFatPer100(food);
+    case "carbs":
+      return food.carbs;
+    case "carbsAvailable":
+      return food.carbsAvailable ?? 0;
+    case "fiber":
+      return food.fiber;
+    case "ash":
+      return food.ash ?? 0;
+    case "calcium":
+      return food.calcium;
+    case "phosphorus":
+      return food.phosphorus;
+    case "zinc":
+      return food.zinc ?? 0;
+    case "iron":
+      return food.iron;
+    case "sodium":
+      return food.sodium;
+    case "potassium":
+      return food.potassium;
+    case "vitaminA":
+      return food.vitaminA ?? food.retinol;
+    case "thiamin":
+      return food.thiamin;
+    case "riboflavin":
+      return food.riboflavin;
+    case "niacin":
+      return food.niacin;
+    case "vitaminC":
+      return food.vitaminC;
+    case "folicAcid":
+      return food.folicAcid ?? 0;
+    case "cost":
+      return food.cost;
+    case "food":
+    case "code":
+    case "grams":
+      return null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Resuelve gramos para alcanzar un objetivo de nutriente/costo.
+ * Retorna null si el alimento no tiene densidad > 0 en ese campo.
+ */
+export function gramsFromNutrientTarget(
+  food: Food,
+  columnId: MealColumnId,
+  target: number
+): number | null {
+  const per100 = nutrientPer100(food, columnId);
+  if (per100 == null || per100 <= 0) return null;
+  if (!Number.isFinite(target) || target <= 0) return 0;
+  return Math.max(0, Math.round((target * 100) / per100));
+}
+
+export function isInvertibleColumn(columnId: MealColumnId): boolean {
+  return (
+    columnId !== "food" &&
+    columnId !== "code" &&
+    columnId !== "grams"
+  );
 }
 
 export function calculateItemTotals(

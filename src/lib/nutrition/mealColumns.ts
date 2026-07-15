@@ -63,7 +63,6 @@ export const MEAL_COLUMNS: MealColumnDef[] = [
 
 export const DEFAULT_VISIBLE_COLUMNS: MealColumnId[] = [
   "food",
-  "code",
   "grams",
   "energy",
 ];

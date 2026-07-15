@@ -180,7 +180,7 @@ export function ColumnLayoutToolbar({
           variant="outline"
           size="sm"
           onClick={onResetColumns}
-          title="Volver a Alimento, Código, Gramos y Energía"
+          title="Volver a Alimento, Gramos y Energía"
         >
           <RotateCcw className="size-4" />
           Resetear columnas

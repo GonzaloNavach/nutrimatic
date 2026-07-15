@@ -10,11 +10,15 @@ import {
   calculateItemTotals,
   calculateMealTotals,
   fiberDisplay,
+  gramsFromNutrientTarget,
+  isInvertibleColumn,
+  nutrientPer100,
 } from "@/lib/nutrition/calculate";
 import { createItem } from "@/lib/nutrition/meals";
 import {
   getColumnValue,
   type MealColumnDef,
+  type MealColumnId,
 } from "@/lib/nutrition/mealColumns";
 import type { Food, MealBlock, MealItem } from "@/lib/nutrition/types";
 import { cn, formatNumber } from "@/lib/utils";
@@ -32,7 +36,7 @@ interface MealBlockCardProps {
   onChange: (meal: MealBlock) => void;
 }
 
-function formatCell(
+function formatReadOnlyCell(
   column: MealColumnDef,
   totals: ReturnType<typeof calculateItemTotals>,
   food: Food | undefined,
@@ -41,12 +45,42 @@ function formatCell(
   if (column.id === "food") return food?.name ?? "—";
   if (column.id === "code") return food?.code ?? "—";
   if (column.id === "grams") return grams > 0 ? formatNumber(grams, 0) : "—";
-  if (column.id === "fiber" && totals.fiber > 10) return "EXCESO";
   const raw = getColumnValue(column.id, totals, food ?? null);
   if (typeof raw === "number") {
     return formatNumber(raw, column.decimals ?? 1);
   }
   return String(raw);
+}
+
+function NutrientCellInput({
+  columnId,
+  decimals,
+  displayValue,
+  disabled,
+  title,
+  onCommit,
+}: {
+  columnId: MealColumnId;
+  decimals: number;
+  displayValue: number;
+  disabled: boolean;
+  title?: string;
+  onCommit: (raw: string) => void;
+}) {
+  return (
+    <Input
+      type="number"
+      min={0}
+      step={decimals > 0 ? String(10 ** -decimals) : 1}
+      placeholder="0"
+      disabled={disabled}
+      title={title}
+      className="ml-auto w-[4.75rem] text-right disabled:opacity-50"
+      value={displayValue > 0 ? Number(displayValue.toFixed(decimals)) : ""}
+      onChange={(e) => onCommit(e.target.value)}
+      aria-label={columnId}
+    />
+  );
 }
 
 export function MealBlockCard({
@@ -81,6 +115,22 @@ export function MealBlockCard({
 
   const addItem = () => {
     onChange({ ...meal, items: [...meal.items, createItem()] });
+  };
+
+  const setGramsFromNutrient = (
+    itemId: string,
+    food: Food,
+    columnId: MealColumnId,
+    raw: string
+  ) => {
+    const target = Number.parseFloat(raw);
+    if (!Number.isFinite(target)) {
+      updateItem(itemId, { grams: 0 });
+      return;
+    }
+    const grams = gramsFromNutrientTarget(food, columnId, target);
+    if (grams == null) return;
+    updateItem(itemId, { grams });
   };
 
   const dataColumns = visibleColumns.filter((c) => c.id !== "food");
@@ -167,33 +217,96 @@ export function MealBlockCard({
                         }
                       />
                     </td>
-                    {dataColumns.map((col) => (
-                      <td
-                        key={col.id}
-                        className="py-2 px-2 align-top text-right tabular-nums"
-                      >
-                        {col.id === "grams" ? (
-                          <Input
-                            type="number"
-                            min={0}
-                            step={1}
-                            placeholder="0"
-                            className="ml-auto w-20 text-right"
-                            value={item.grams || ""}
-                            onChange={(e) =>
-                              updateItem(item.id, {
-                                grams:
-                                  Number.parseFloat(e.target.value) || 0,
-                              })
-                            }
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">
-                            {formatCell(col, rowTotals, food, item.grams)}
-                          </span>
-                        )}
-                      </td>
-                    ))}
+                    {dataColumns.map((col) => {
+                      if (col.id === "grams") {
+                        return (
+                          <td
+                            key={col.id}
+                            className="py-2 px-2 align-top text-right tabular-nums"
+                          >
+                            <Input
+                              type="number"
+                              min={0}
+                              step={1}
+                              placeholder="0"
+                              className="ml-auto w-20 text-right"
+                              value={item.grams || ""}
+                              onChange={(e) =>
+                                updateItem(item.id, {
+                                  grams:
+                                    Number.parseFloat(e.target.value) || 0,
+                                })
+                              }
+                            />
+                          </td>
+                        );
+                      }
+
+                      if (col.id === "code") {
+                        return (
+                          <td
+                            key={col.id}
+                            className="py-2 px-2 align-top text-right tabular-nums text-muted-foreground"
+                          >
+                            {food?.code ?? "—"}
+                          </td>
+                        );
+                      }
+
+                      if (isInvertibleColumn(col.id) && food) {
+                        const per100 = nutrientPer100(food, col.id) ?? 0;
+                        const canEdit = per100 > 0;
+                        const raw = getColumnValue(
+                          col.id,
+                          rowTotals,
+                          food
+                        );
+                        const display =
+                          typeof raw === "number" ? raw : 0;
+                        const decimals = col.decimals ?? 1;
+
+                        return (
+                          <td
+                            key={col.id}
+                            className="py-2 px-2 align-top text-right tabular-nums"
+                          >
+                            <NutrientCellInput
+                              columnId={col.id}
+                              decimals={decimals}
+                              displayValue={display}
+                              disabled={!canEdit}
+                              title={
+                                canEdit
+                                  ? `Editar ${col.label}: ajusta los gramos`
+                                  : "Sin dato en TPCA para invertir"
+                              }
+                              onCommit={(value) =>
+                                setGramsFromNutrient(
+                                  item.id,
+                                  food,
+                                  col.id,
+                                  value
+                                )
+                              }
+                            />
+                          </td>
+                        );
+                      }
+
+                      return (
+                        <td
+                          key={col.id}
+                          className="py-2 px-2 align-top text-right tabular-nums text-muted-foreground"
+                        >
+                          {formatReadOnlyCell(
+                            col,
+                            rowTotals,
+                            food,
+                            item.grams
+                          )}
+                        </td>
+                      );
+                    })}
                     {columnsEditable ? (
                       <td className="sticky right-10 z-10 bg-card py-2" />
                     ) : null}
