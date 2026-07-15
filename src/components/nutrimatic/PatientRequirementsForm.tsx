@@ -73,7 +73,7 @@ export function PatientRequirementsForm({
   }
 
   return (
-    <div className={cn("space-y-4 rounded-lg border bg-muted/20 p-3", className)}>
+    <div className={cn("space-y-4 rounded-lg border bg-muted/20 p-4", className)}>
       <div>
         <h3 className="text-sm font-semibold tracking-tight">Paciente</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -81,121 +81,142 @@ export function PatientRequirementsForm({
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Sexo" htmlFor="pat-sex">
-          <select
-            id="pat-sex"
-            className={selectClass}
-            value={profile.sex}
-            onChange={(e) => patch({ sex: e.target.value as Sex | "" })}
-          >
-            <option value="">Seleccionar…</option>
-            <option value="female">Mujer</option>
-            <option value="male">Hombre</option>
-          </select>
-        </Field>
+      <div className="space-y-4">
+        <FieldGroup title="Identidad">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Sexo" htmlFor="pat-sex">
+              <select
+                id="pat-sex"
+                className={selectClass}
+                value={profile.sex}
+                onChange={(e) => patch({ sex: e.target.value as Sex | "" })}
+              >
+                <option value="">Seleccionar…</option>
+                <option value="female">Mujer</option>
+                <option value="male">Hombre</option>
+              </select>
+            </Field>
 
-        <Field label="Edad (años)" htmlFor="pat-age">
-          <Input
-            id="pat-age"
-            type="number"
-            min={1}
-            max={120}
-            step={1}
-            value={profile.ageYears ?? ""}
-            onChange={(e) =>
-              patch({
-                ageYears: e.target.value
-                  ? Number.parseInt(e.target.value, 10)
-                  : null,
-              })
-            }
-          />
-        </Field>
+            <Field label="Edad (años)" htmlFor="pat-age">
+              <Input
+                id="pat-age"
+                type="number"
+                min={1}
+                max={120}
+                step={1}
+                value={profile.ageYears ?? ""}
+                onChange={(e) =>
+                  patch({
+                    ageYears: e.target.value
+                      ? Number.parseInt(e.target.value, 10)
+                      : null,
+                  })
+                }
+              />
+            </Field>
+          </div>
+        </FieldGroup>
 
-        <Field label="Peso (kg)" htmlFor="pat-weight">
-          <Input
-            id="pat-weight"
-            type="number"
-            min={1}
-            max={400}
-            step="0.1"
-            value={profile.weightKg ?? ""}
-            onChange={(e) =>
-              patch({
-                weightKg: e.target.value
-                  ? Number.parseFloat(e.target.value)
-                  : null,
-              })
-            }
-          />
-        </Field>
+        <FieldGroup title="Antropometría">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Peso (kg)" htmlFor="pat-weight">
+              <Input
+                id="pat-weight"
+                type="number"
+                min={1}
+                max={400}
+                step="0.1"
+                value={profile.weightKg ?? ""}
+                onChange={(e) =>
+                  patch({
+                    weightKg: e.target.value
+                      ? Number.parseFloat(e.target.value)
+                      : null,
+                  })
+                }
+              />
+            </Field>
 
-        <Field label="Talla (cm)" htmlFor="pat-height">
-          <Input
-            id="pat-height"
-            type="number"
-            min={40}
-            max={250}
-            step={1}
-            value={profile.heightCm ?? ""}
-            onChange={(e) =>
-              patch({
-                heightCm: e.target.value
-                  ? Number.parseFloat(e.target.value)
-                  : null,
-              })
-            }
-          />
-        </Field>
+            <Field label="Talla (cm)" htmlFor="pat-height">
+              <Input
+                id="pat-height"
+                type="number"
+                min={40}
+                max={250}
+                step={1}
+                value={profile.heightCm ?? ""}
+                onChange={(e) =>
+                  patch({
+                    heightCm: e.target.value
+                      ? Number.parseFloat(e.target.value)
+                      : null,
+                  })
+                }
+              />
+            </Field>
 
-        <Field label="IMC" htmlFor="pat-imc">
-          <Input
-            id="pat-imc"
-            readOnly
-            tabIndex={-1}
-            aria-live="polite"
-            value={
-              imc != null
-                ? `${formatNumber(imc, 1)} · ${imcCategoryLabel(imc)}`
-                : ""
-            }
-            placeholder="Con peso y talla"
-            className="cursor-default bg-muted/40 text-muted-foreground"
-          />
-        </Field>
+            <div className="space-y-1.5">
+              <Label htmlFor="pat-imc">IMC</Label>
+              <div
+                id="pat-imc"
+                aria-live="polite"
+                className={cn(
+                  "flex h-9 items-center rounded-md border border-dashed border-input bg-muted/30 px-3 text-sm tabular-nums",
+                  imc == null && "text-muted-foreground"
+                )}
+              >
+                {imc != null ? (
+                  <span className="flex w-full items-baseline justify-between gap-2">
+                    <span className="font-semibold text-foreground">
+                      {formatNumber(imc, 1)}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {imcCategoryLabel(imc)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-xs">Peso + talla</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </FieldGroup>
 
-        <Field label="Actividad" htmlFor="pat-activity">
-          <select
-            id="pat-activity"
-            className={selectClass}
-            value={profile.activity}
-            onChange={(e) =>
-              patch({ activity: e.target.value as ActivityLevel })
-            }
-          >
-            {(Object.keys(ACTIVITY_LABELS) as ActivityLevel[]).map((key) => (
-              <option key={key} value={key}>
-                {ACTIVITY_LABELS[key]}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <FieldGroup title="Plan">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Actividad" htmlFor="pat-activity">
+              <select
+                id="pat-activity"
+                className={selectClass}
+                value={profile.activity}
+                onChange={(e) =>
+                  patch({ activity: e.target.value as ActivityLevel })
+                }
+              >
+                {(Object.keys(ACTIVITY_LABELS) as ActivityLevel[]).map((key) => (
+                  <option key={key} value={key}>
+                    {ACTIVITY_LABELS[key]}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
-        <Field label="Objetivo" htmlFor="pat-goal">
-          <select
-            id="pat-goal"
-            className={selectClass}
-            value={profile.goal}
-            onChange={(e) => patch({ goal: e.target.value as EnergyGoal })}
-          >
-            {(Object.keys(GOAL_LABELS) as EnergyGoal[]).map((key) => (
-              <option key={key} value={key}>
-                {GOAL_LABELS[key]}
-              </option>
-            ))}
-          </select>
-        </Field>
+            <Field label="Objetivo" htmlFor="pat-goal">
+              <select
+                id="pat-goal"
+                className={selectClass}
+                value={profile.goal}
+                onChange={(e) => patch({ goal: e.target.value as EnergyGoal })}
+              >
+                {(Object.keys(GOAL_LABELS) as EnergyGoal[]).map((key) => (
+                  <option key={key} value={key}>
+                    {GOAL_LABELS[key]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </FieldGroup>
       </div>
 
       <div className="rounded-md border bg-background/60">
@@ -346,6 +367,23 @@ export function PatientRequirementsForm({
           {error}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function FieldGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </p>
+      {children}
     </div>
   );
 }
