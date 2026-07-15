@@ -7,18 +7,24 @@ import {
   HiddenColumnsBar,
 } from "@/components/nutrimatic/ColumnPicker";
 import { MealBlockCard } from "@/components/nutrimatic/MealBlockCard";
+import {
+  buildMealSegments,
+  MealContributionLegend,
+  NutrientIntakeBar,
+} from "@/components/nutrimatic/NutrientIntakeBar";
 import { PlanSidePanel } from "@/components/nutrimatic/PlanSidePanel";
 import { Button } from "@/components/ui/button";
 import { useMealColumns } from "@/hooks/useMealColumns";
 import {
   buildAdequacyRows,
   calculateDayTotals,
+  calculateMealTotals,
   DEFAULT_REQUIREMENTS,
 } from "@/lib/nutrition/calculate";
 import { createDefaultMeals, createSamplePlan } from "@/lib/nutrition/meals";
 import type { Food, MealBlock, Requirements } from "@/lib/nutrition/types";
 import { formatNumber } from "@/lib/utils";
-import { Apple, Flame, RotateCcw, Salad, Sparkles } from "lucide-react";
+import { RotateCcw, Scale, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface CalculatorAppProps {
@@ -48,6 +54,11 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
     [foods]
   );
 
+  const mealTotals = useMemo(
+    () => meals.map((meal) => calculateMealTotals(meal.items, foodMap)),
+    [meals, foodMap]
+  );
+
   const dayTotals = useMemo(
     () => calculateDayTotals(meals, foodMap),
     [meals, foodMap]
@@ -58,7 +69,30 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
     [dayTotals, requirements]
   );
 
-  const energyAdequacy = adequacyRows.find((row) => row.key === "energy");
+  const energySegments = useMemo(
+    () =>
+      buildMealSegments(
+        meals,
+        mealTotals.map((t) => t.energy)
+      ),
+    [meals, mealTotals]
+  );
+  const proteinSegments = useMemo(
+    () =>
+      buildMealSegments(
+        meals,
+        mealTotals.map((t) => t.proteinTotal)
+      ),
+    [meals, mealTotals]
+  );
+  const carbSegments = useMemo(
+    () =>
+      buildMealSegments(
+        meals,
+        mealTotals.map((t) => t.carbs)
+      ),
+    [meals, mealTotals]
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,32 +125,40 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
             }
           />
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              title="Energía del día"
-              value={`${formatNumber(dayTotals.energy, 0)} kcal`}
-              subtitle={
-                energyAdequacy?.percent
-                  ? `${formatNumber(energyAdequacy.percent, 1)}% del objetivo`
-                  : undefined
-              }
-              icon={Flame}
-            />
-            <KpiCard
-              title="Proteína total"
-              value={`${formatNumber(dayTotals.proteinTotal, 1)} g`}
-              icon={Salad}
-            />
-            <KpiCard
-              title="Carbohidratos"
-              value={`${formatNumber(dayTotals.carbs, 1)} g`}
-              icon={Apple}
-            />
-            <KpiCard
-              title="Peso neto total"
-              value={`${formatNumber(dayTotals.grams, 0)} g`}
-              subtitle={`Costo S/ ${formatNumber(dayTotals.cost, 2)}`}
-            />
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <NutrientIntakeBar
+                title="Energía"
+                unit="kcal"
+                provided={dayTotals.energy}
+                required={requirements.energy}
+                segments={energySegments}
+                decimals={0}
+              />
+              <NutrientIntakeBar
+                title="Proteína"
+                unit="g"
+                provided={dayTotals.proteinTotal}
+                required={requirements.proteinTotal}
+                segments={proteinSegments}
+                decimals={1}
+              />
+              <NutrientIntakeBar
+                title="Carbohidratos"
+                unit="g"
+                provided={dayTotals.carbs}
+                required={requirements.carbs}
+                segments={carbSegments}
+                decimals={1}
+              />
+              <KpiCard
+                title="Peso neto total"
+                value={`${formatNumber(dayTotals.grams, 0)} g`}
+                subtitle={`Costo S/ ${formatNumber(dayTotals.cost, 2)}`}
+                icon={Scale}
+              />
+            </div>
+            <MealContributionLegend meals={meals} />
           </div>
 
           <div className="space-y-4">
