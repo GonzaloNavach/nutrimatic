@@ -18,7 +18,7 @@ interface PlanWorkspaceProps {
 
 /**
  * Un solo bloque: Requerimientos | Plan | Adecuación.
- * Default: Plan (uso diario).
+ * Default: Requerimientos.
  */
 export function PlanWorkspace({
   requirements,
@@ -26,7 +26,7 @@ export function PlanWorkspace({
   adequacyRows,
   planContent,
 }: PlanWorkspaceProps) {
-  const [tab, setTab] = useState("plan");
+  const [tab, setTab] = useState("requirements");
 
   return (
     <Card>

@@ -34,7 +34,7 @@ interface CalculatorAppProps {
 }
 
 export function CalculatorApp({ foods }: CalculatorAppProps) {
-  const [meals, setMeals] = useState<MealBlock[]>(() => createSamplePlan(foods));
+  const [meals, setMeals] = useState<MealBlock[]>(() => createDefaultMeals());
   const [requirements, setRequirements] = useState<Requirements>(
     DEFAULT_REQUIREMENTS
   );
