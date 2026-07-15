@@ -121,14 +121,20 @@ export function MealBlockCard({
     itemId: string,
     food: Food,
     columnId: MealColumnId,
-    raw: string
+    raw: string,
+    currentGrams: number
   ) => {
     const target = Number.parseFloat(raw);
     if (!Number.isFinite(target)) {
       updateItem(itemId, { grams: 0 });
       return;
     }
-    const grams = gramsFromNutrientTarget(food, columnId, target);
+    const grams = gramsFromNutrientTarget(
+      food,
+      columnId,
+      target,
+      currentGrams
+    );
     if (grams == null) return;
     updateItem(itemId, { grams });
   };
@@ -227,7 +233,7 @@ export function MealBlockCard({
                             <Input
                               type="number"
                               min={0}
-                              step={1}
+                              step={0.1}
                               placeholder="0"
                               className="ml-auto w-20 text-right"
                               value={item.grams || ""}
@@ -285,7 +291,8 @@ export function MealBlockCard({
                                   item.id,
                                   food,
                                   col.id,
-                                  value
+                                  value,
+                                  item.grams
                                 )
                               }
                             />

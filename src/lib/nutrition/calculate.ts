@@ -135,17 +135,31 @@ export function nutrientPer100(
 
 /**
  * Resuelve gramos para alcanzar un objetivo de nutriente/costo.
+ * Usa 0.1 g de precisión para que las flechas del input puedan avanzar.
  * Retorna null si el alimento no tiene densidad > 0 en ese campo.
  */
 export function gramsFromNutrientTarget(
   food: Food,
   columnId: MealColumnId,
-  target: number
+  target: number,
+  currentGrams = 0
 ): number | null {
   const per100 = nutrientPer100(food, columnId);
   if (per100 == null || per100 <= 0) return null;
   if (!Number.isFinite(target) || target <= 0) return 0;
-  return Math.max(0, Math.round((target * 100) / per100));
+
+  const roundTenths = (g: number) => Math.max(0, Math.round(g * 10) / 10);
+  let grams = roundTenths((target * 100) / per100);
+
+  // Si el redondeo deja la misma porción, la flecha no se notaría: empujar ±0.1 g.
+  const currentValue = scale(per100, currentGrams);
+  if (grams === roundTenths(currentGrams)) {
+    if (target > currentValue + 1e-9) grams = roundTenths(currentGrams + 0.1);
+    else if (target < currentValue - 1e-9)
+      grams = roundTenths(currentGrams - 0.1);
+  }
+
+  return grams;
 }
 
 export function isInvertibleColumn(columnId: MealColumnId): boolean {
