@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ColumnAddMenu } from "@/components/nutrimatic/ColumnPicker";
 import { FoodCategoryPicker } from "@/components/nutrimatic/FoodCategoryPicker";
 import {
   calculateItemTotals,
@@ -17,14 +18,17 @@ import {
 } from "@/lib/nutrition/mealColumns";
 import type { Food, MealBlock, MealItem } from "@/lib/nutrition/types";
 import { cn, formatNumber } from "@/lib/utils";
-import { EyeOff, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 
 interface MealBlockCardProps {
   meal: MealBlock;
   foodMap: Map<number, Food>;
   foods: Food[];
   visibleColumns: MealColumnDef[];
+  hiddenColumns: MealColumnDef[];
   onHideColumn: (id: MealColumnDef["id"]) => void;
+  onShowColumn: (id: MealColumnDef["id"]) => void;
+  onResetColumns: () => void;
   onChange: (meal: MealBlock) => void;
 }
 
@@ -50,7 +54,10 @@ export function MealBlockCard({
   foodMap,
   foods,
   visibleColumns,
+  hiddenColumns,
   onHideColumn,
+  onShowColumn,
+  onResetColumns,
   onChange,
 }: MealBlockCardProps) {
   const totals = calculateMealTotals(meal.items, foodMap);
@@ -118,15 +125,23 @@ export function MealBlockCard({
                           type="button"
                           className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                           aria-label={`Ocultar ${col.label}`}
+                          title={`Ocultar ${col.label}`}
                           onClick={() => onHideColumn(col.id)}
                         >
-                          <EyeOff className="size-3.5" />
+                          <X className="size-3.5" />
                         </button>
                       ) : null}
                     </span>
                   </th>
                 ))}
-                <th className="dash-col-header w-10 py-2" />
+                <th className="dash-col-header sticky right-10 z-10 w-10 bg-card py-2 px-1 text-center">
+                  <ColumnAddMenu
+                    hiddenColumns={hiddenColumns}
+                    onShow={onShowColumn}
+                    onReset={onResetColumns}
+                  />
+                </th>
+                <th className="dash-col-header sticky right-0 z-10 w-10 bg-card py-2" />
               </tr>
             </thead>
             <tbody>
@@ -173,7 +188,8 @@ export function MealBlockCard({
                         )}
                       </td>
                     ))}
-                    <td className="py-2 align-top">
+                    <td className="sticky right-10 z-10 bg-card py-2" />
+                    <td className="sticky right-0 z-10 bg-card py-2 align-top">
                       <Button
                         type="button"
                         variant="ghost"

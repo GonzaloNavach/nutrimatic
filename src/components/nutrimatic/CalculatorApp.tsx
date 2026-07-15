@@ -2,7 +2,7 @@
 
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import { ColumnPicker } from "@/components/nutrimatic/ColumnPicker";
+import { HiddenColumnsBar } from "@/components/nutrimatic/ColumnPicker";
 import { MealBlockCard } from "@/components/nutrimatic/MealBlockCard";
 import { PlanSidePanel } from "@/components/nutrimatic/PlanSidePanel";
 import { Button } from "@/components/ui/button";
@@ -62,11 +62,6 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
             description="Calculador de planes nutricionales — TPCA 2023 (INS)"
             actions={
               <>
-                <ColumnPicker
-                  hiddenColumns={hiddenColumns}
-                  onShow={showColumn}
-                  onReset={resetColumns}
-                />
                 <Button
                   type="button"
                   variant="outline"
@@ -119,6 +114,10 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
             <div className="space-y-4">
+              <HiddenColumnsBar
+                hiddenColumns={hiddenColumns}
+                onShow={showColumn}
+              />
               {meals.map((meal) => (
                 <MealBlockCard
                   key={meal.id}
@@ -126,7 +125,10 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
                   foods={foods}
                   foodMap={foodMap}
                   visibleColumns={visibleColumns}
+                  hiddenColumns={hiddenColumns}
                   onHideColumn={hideColumn}
+                  onShowColumn={showColumn}
+                  onResetColumns={resetColumns}
                   onChange={(nextMeal) =>
                     setMeals((prev) =>
                       prev.map((item) =>
