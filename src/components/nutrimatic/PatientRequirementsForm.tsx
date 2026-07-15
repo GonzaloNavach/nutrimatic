@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import {
   ACTIVITY_LABELS,
   BIOAVAILABILITY_LABELS,
-  DEFAULT_PATIENT_PROFILE,
   GOAL_LABELS,
   RESIDENCE_LABELS,
   type ActivityLevel,
@@ -33,23 +32,27 @@ const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] [color-scheme:light] dark:[color-scheme:dark]";
 
 interface PatientRequirementsFormProps {
+  profile: PatientProfile;
+  onProfileChange: (profile: PatientProfile) => void;
   onApply: (requirements: Requirements, meta: RequirementCalcMeta) => void;
+  onSkipManual: () => void;
   className?: string;
 }
 
 export function PatientRequirementsForm({
+  profile,
+  onProfileChange,
   onApply,
+  onSkipManual,
   className,
 }: PatientRequirementsFormProps) {
-  const [profile, setProfile] = useState<PatientProfile>(DEFAULT_PATIENT_PROFILE);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [lastMeta, setLastMeta] = useState<RequirementCalcMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const gate = useMemo(() => canCalculateRequirements(profile), [profile]);
 
   function patch(partial: Partial<PatientProfile>) {
-    setProfile((prev) => ({ ...prev, ...partial }));
+    onProfileChange({ ...profile, ...partial });
     setError(null);
   }
 
@@ -57,11 +60,9 @@ export function PatientRequirementsForm({
     const result = calculatePatientRequirements(profile);
     if (!result.ok) {
       setError(result.meta.errors[0] ?? "No se pudo calcular.");
-      setLastMeta(result.meta);
       return;
     }
     setError(null);
-    setLastMeta(result.meta);
     onApply(result.requirements, result.meta);
   }
 
@@ -70,7 +71,7 @@ export function PatientRequirementsForm({
       <div>
         <h3 className="text-sm font-semibold tracking-tight">Paciente</h3>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Completá lo básico y calculá. Los requerimientos quedan editables.
+          Completá lo básico y calculá para ver las metas del día.
         </p>
       </div>
 
@@ -80,9 +81,7 @@ export function PatientRequirementsForm({
             id="pat-sex"
             className={selectClass}
             value={profile.sex}
-            onChange={(e) =>
-              patch({ sex: e.target.value as Sex | "" })
-            }
+            onChange={(e) => patch({ sex: e.target.value as Sex | "" })}
           >
             <option value="">Seleccionar…</option>
             <option value="female">Mujer</option>
@@ -310,6 +309,9 @@ export function PatientRequirementsForm({
           <Calculator className="size-4" />
           Calcular requerimientos
         </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onSkipManual}>
+          Editar metas a mano
+        </Button>
         {!gate.ready ? (
           <p className="text-xs text-muted-foreground">
             Faltan: {gate.missing.join(", ")}
@@ -320,24 +322,6 @@ export function PatientRequirementsForm({
       {error ? (
         <p className="text-xs text-destructive" role="alert">
           {error}
-        </p>
-      ) : null}
-
-      {lastMeta && lastMeta.errors.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          {lastMeta.energySource === "schofield" ? (
-            <>
-              TMB {lastMeta.bmr} kcal · PAL {lastMeta.pal} · GET≈
-              {lastMeta.teeBeforeAdjust} kcal
-              {lastMeta.imc != null ? ` · IMC ${lastMeta.imc}` : ""}
-            </>
-          ) : (
-            <>Energía desde tabla CENAN (sin peso)</>
-          )}
-          <span className="mx-1">·</span>
-          <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-            Calculado · editable
-          </span>
         </p>
       ) : null}
     </div>

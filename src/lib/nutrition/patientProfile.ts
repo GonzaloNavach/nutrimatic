@@ -61,3 +61,26 @@ export const RESIDENCE_LABELS: Record<ResidenceArea, string> = {
   rural: "Rural",
   national: "Nacional",
 };
+
+export function formatPatientSummary(profile: PatientProfile): string | null {
+  const parts: string[] = [];
+  if (profile.sex === "female") parts.push("Mujer");
+  else if (profile.sex === "male") parts.push("Hombre");
+  if (profile.ageYears != null && profile.ageYears > 0) {
+    parts.push(`${profile.ageYears} a`);
+  }
+  if (profile.weightKg != null && profile.weightKg > 0) {
+    parts.push(`${profile.weightKg} kg`);
+  }
+  if (profile.heightCm != null && profile.heightCm > 0) {
+    parts.push(`${profile.heightCm} cm`);
+  }
+  if (parts.length === 0) return null;
+  parts.push(ACTIVITY_LABELS[profile.activity]);
+  if (profile.physioState === "pregnancy") {
+    parts.push(`Gest. T${profile.pregnancyTrimester}`);
+  } else if (profile.physioState === "lactation") {
+    parts.push("Lactancia");
+  }
+  return parts.join(" · ");
+}
