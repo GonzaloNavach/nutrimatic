@@ -7,20 +7,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { MealColumnDef } from "@/lib/nutrition/mealColumns";
-import { Plus, RotateCcw } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Lock, LockOpen, Plus, RotateCcw } from "lucide-react";
 
 interface ColumnAddMenuProps {
   hiddenColumns: MealColumnDef[];
   onShow: (id: MealColumnDef["id"]) => void;
-  onReset: () => void;
 }
 
-/** “+” anclado a la tabla: agregar columnas ocultas o restablecer. */
-export function ColumnAddMenu({
-  hiddenColumns,
-  onShow,
-  onReset,
-}: ColumnAddMenuProps) {
+/** “+” anclado a la tabla: agregar columnas ocultas. */
+export function ColumnAddMenu({ hiddenColumns, onShow }: ColumnAddMenuProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,19 +30,7 @@ export function ColumnAddMenu({
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-sm font-medium">Agregar columnas</p>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2"
-            onClick={onReset}
-          >
-            <RotateCcw className="size-3.5" />
-            Restablecer
-          </Button>
-        </div>
+        <p className="mb-2 text-sm font-medium">Agregar columnas</p>
         {hiddenColumns.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             Todas las columnas están visibles.
@@ -72,6 +56,71 @@ export function ColumnAddMenu({
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+interface ColumnLayoutToolbarProps {
+  columnsLocked: boolean;
+  tipSeen: boolean;
+  onToggleLock: () => void;
+  onResetColumns: () => void;
+}
+
+/** Candado global + Vista original + tip de primera vez. */
+export function ColumnLayoutToolbar({
+  columnsLocked,
+  tipSeen,
+  onToggleLock,
+  onResetColumns,
+}: ColumnLayoutToolbarProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant={columnsLocked ? "outline" : "secondary"}
+          size="sm"
+          onClick={onToggleLock}
+          aria-pressed={!columnsLocked}
+          aria-label={
+            columnsLocked ? "Desbloquear columnas" : "Bloquear columnas"
+          }
+          title={
+            columnsLocked
+              ? "Editar columnas"
+              : "Bloquear columnas (modo lectura)"
+          }
+        >
+          {columnsLocked ? (
+            <Lock className="size-4" />
+          ) : (
+            <LockOpen className="size-4" />
+          )}
+          {columnsLocked ? "Columnas" : "Editando"}
+        </Button>
+        {!columnsLocked ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onResetColumns}
+            title="Volver a Alimento, Código, Gramos y Energía"
+          >
+            <RotateCcw className="size-4" />
+            Vista original
+          </Button>
+        ) : null}
+      </div>
+      {columnsLocked && !tipSeen ? (
+        <p
+          className={cn(
+            "rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+          )}
+        >
+          Tocá el candado para agregar o quitar columnas de nutrientes.
+        </p>
+      ) : null}
+    </div>
   );
 }
 

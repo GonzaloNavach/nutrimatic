@@ -2,7 +2,10 @@
 
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import { HiddenColumnsBar } from "@/components/nutrimatic/ColumnPicker";
+import {
+  ColumnLayoutToolbar,
+  HiddenColumnsBar,
+} from "@/components/nutrimatic/ColumnPicker";
 import { MealBlockCard } from "@/components/nutrimatic/MealBlockCard";
 import { PlanSidePanel } from "@/components/nutrimatic/PlanSidePanel";
 import { Button } from "@/components/ui/button";
@@ -31,9 +34,13 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
   const {
     visibleColumns,
     hiddenColumns,
+    columnsLocked,
+    tipSeen,
+    columnsEditable,
     showColumn,
     hideColumn,
     resetColumns,
+    toggleColumnsLock,
   } = useMealColumns();
 
   const foodMap = useMemo(
@@ -114,10 +121,18 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
             <div className="space-y-4">
-              <HiddenColumnsBar
-                hiddenColumns={hiddenColumns}
-                onShow={showColumn}
+              <ColumnLayoutToolbar
+                columnsLocked={columnsLocked}
+                tipSeen={tipSeen}
+                onToggleLock={toggleColumnsLock}
+                onResetColumns={resetColumns}
               />
+              {columnsEditable ? (
+                <HiddenColumnsBar
+                  hiddenColumns={hiddenColumns}
+                  onShow={showColumn}
+                />
+              ) : null}
               {meals.map((meal) => (
                 <MealBlockCard
                   key={meal.id}
@@ -126,9 +141,9 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
                   foodMap={foodMap}
                   visibleColumns={visibleColumns}
                   hiddenColumns={hiddenColumns}
+                  columnsEditable={columnsEditable}
                   onHideColumn={hideColumn}
                   onShowColumn={showColumn}
-                  onResetColumns={resetColumns}
                   onChange={(nextMeal) =>
                     setMeals((prev) =>
                       prev.map((item) =>

@@ -26,9 +26,9 @@ interface MealBlockCardProps {
   foods: Food[];
   visibleColumns: MealColumnDef[];
   hiddenColumns: MealColumnDef[];
+  columnsEditable: boolean;
   onHideColumn: (id: MealColumnDef["id"]) => void;
   onShowColumn: (id: MealColumnDef["id"]) => void;
-  onResetColumns: () => void;
   onChange: (meal: MealBlock) => void;
 }
 
@@ -55,9 +55,9 @@ export function MealBlockCard({
   foods,
   visibleColumns,
   hiddenColumns,
+  columnsEditable,
   onHideColumn,
   onShowColumn,
-  onResetColumns,
   onChange,
 }: MealBlockCardProps) {
   const totals = calculateMealTotals(meal.items, foodMap);
@@ -120,7 +120,7 @@ export function MealBlockCard({
                           ({col.unit})
                         </span>
                       ) : null}
-                      {!col.locked ? (
+                      {!col.locked && columnsEditable ? (
                         <button
                           type="button"
                           className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -134,14 +134,20 @@ export function MealBlockCard({
                     </span>
                   </th>
                 ))}
-                <th className="dash-col-header sticky right-10 z-10 w-10 bg-card py-2 px-1 text-center">
-                  <ColumnAddMenu
-                    hiddenColumns={hiddenColumns}
-                    onShow={onShowColumn}
-                    onReset={onResetColumns}
-                  />
-                </th>
-                <th className="dash-col-header sticky right-0 z-10 w-10 bg-card py-2" />
+                {columnsEditable ? (
+                  <th className="dash-col-header sticky right-10 z-10 w-10 bg-card py-2 px-1 text-center">
+                    <ColumnAddMenu
+                      hiddenColumns={hiddenColumns}
+                      onShow={onShowColumn}
+                    />
+                  </th>
+                ) : null}
+                <th
+                  className={cn(
+                    "dash-col-header sticky right-0 z-10 w-10 bg-card py-2",
+                    !columnsEditable && "right-0"
+                  )}
+                />
               </tr>
             </thead>
             <tbody>
@@ -188,7 +194,9 @@ export function MealBlockCard({
                         )}
                       </td>
                     ))}
-                    <td className="sticky right-10 z-10 bg-card py-2" />
+                    {columnsEditable ? (
+                      <td className="sticky right-10 z-10 bg-card py-2" />
+                    ) : null}
                     <td className="sticky right-0 z-10 bg-card py-2 align-top">
                       <Button
                         type="button"

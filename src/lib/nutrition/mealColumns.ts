@@ -69,6 +69,8 @@ export const DEFAULT_VISIBLE_COLUMNS: MealColumnId[] = [
 ];
 
 export const MEAL_COLUMNS_STORAGE_KEY = "nutrimatic-meal-columns";
+export const MEAL_COLUMNS_LOCK_KEY = "nutrimatic-meal-columns-locked";
+export const MEAL_COLUMNS_TIP_KEY = "nutrimatic-meal-columns-tip-seen";
 
 export function getColumnValue(
   columnId: MealColumnId,

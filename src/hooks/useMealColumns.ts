@@ -3,7 +3,9 @@
 import {
   DEFAULT_VISIBLE_COLUMNS,
   MEAL_COLUMNS,
+  MEAL_COLUMNS_LOCK_KEY,
   MEAL_COLUMNS_STORAGE_KEY,
+  MEAL_COLUMNS_TIP_KEY,
   type MealColumnId,
 } from "@/lib/nutrition/mealColumns";
 import { useCallback, useEffect, useState } from "react";
@@ -24,14 +26,30 @@ function loadStoredColumns(): MealColumnId[] {
   }
 }
 
+function loadBool(key: string, fallback: boolean): boolean {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return raw === "1" || raw === "true";
+  } catch {
+    return fallback;
+  }
+}
+
 export function useMealColumns() {
   const [visibleIds, setVisibleIds] = useState<MealColumnId[]>(
     DEFAULT_VISIBLE_COLUMNS
   );
+  /** true = candado cerrado: no se editan columnas. */
+  const [columnsLocked, setColumnsLocked] = useState(true);
+  const [tipSeen, setTipSeen] = useState(true);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setVisibleIds(loadStoredColumns());
+    setColumnsLocked(loadBool(MEAL_COLUMNS_LOCK_KEY, true));
+    setTipSeen(loadBool(MEAL_COLUMNS_TIP_KEY, false));
     setHydrated(true);
   }, []);
 
@@ -39,6 +57,16 @@ export function useMealColumns() {
     if (!hydrated) return;
     localStorage.setItem(MEAL_COLUMNS_STORAGE_KEY, JSON.stringify(visibleIds));
   }, [visibleIds, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(MEAL_COLUMNS_LOCK_KEY, columnsLocked ? "1" : "0");
+  }, [columnsLocked, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(MEAL_COLUMNS_TIP_KEY, tipSeen ? "1" : "0");
+  }, [tipSeen, hydrated]);
 
   const visibleColumns = MEAL_COLUMNS.filter((c) => visibleIds.includes(c.id));
 
@@ -60,11 +88,23 @@ export function useMealColumns() {
     setVisibleIds([...DEFAULT_VISIBLE_COLUMNS]);
   }, []);
 
+  const toggleColumnsLock = useCallback(() => {
+    setColumnsLocked((prev) => {
+      const next = !prev;
+      if (!next) setTipSeen(true);
+      return next;
+    });
+  }, []);
+
   return {
     visibleColumns,
     hiddenColumns,
+    columnsLocked,
+    tipSeen,
+    columnsEditable: !columnsLocked,
     showColumn,
     hideColumn,
     resetColumns,
+    toggleColumnsLock,
   };
 }
