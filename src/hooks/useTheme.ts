@@ -11,17 +11,21 @@ function applyTheme(theme: ThemeMode) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<ThemeMode>("light");
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY);
-      const next: ThemeMode = stored === "dark" ? "dark" : "light";
+      // Default: oscuro. Solo claro si el usuario lo eligió explícito.
+      const next: ThemeMode = stored === "light" ? "light" : "dark";
       setThemeState(next);
       applyTheme(next);
+      if (stored == null) {
+        localStorage.setItem(THEME_STORAGE_KEY, "dark");
+      }
     } catch {
-      applyTheme("light");
+      applyTheme("dark");
     }
     setHydrated(true);
   }, []);

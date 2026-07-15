@@ -10,6 +10,9 @@ import {
 } from "@/lib/nutrition/mealColumns";
 import { useCallback, useEffect, useState } from "react";
 
+/** Una sola vez: quitar Código de sets viejos que lo traían por default. */
+const DROP_CODE_MIGRATION_KEY = "nutrimatic-columns-drop-code-v1";
+
 function loadStoredColumns(): MealColumnId[] {
   if (typeof window === "undefined") return DEFAULT_VISIBLE_COLUMNS;
   try {
@@ -17,7 +20,13 @@ function loadStoredColumns(): MealColumnId[] {
     if (!raw) return DEFAULT_VISIBLE_COLUMNS;
     const parsed = JSON.parse(raw) as MealColumnId[];
     const valid = new Set(MEAL_COLUMNS.map((c) => c.id));
-    const filtered = parsed.filter((id) => valid.has(id));
+    let filtered = parsed.filter((id) => valid.has(id));
+
+    if (!localStorage.getItem(DROP_CODE_MIGRATION_KEY)) {
+      filtered = filtered.filter((id) => id !== "code");
+      localStorage.setItem(DROP_CODE_MIGRATION_KEY, "1");
+    }
+
     if (!filtered.includes("food")) filtered.unshift("food");
     if (!filtered.includes("grams")) filtered.splice(1, 0, "grams");
     return filtered.length > 0 ? filtered : DEFAULT_VISIBLE_COLUMNS;
