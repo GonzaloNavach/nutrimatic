@@ -4,6 +4,7 @@ import {
   CollapsibleCategoryGroups,
   toggleExpandedId,
 } from "@/components/nutrimatic/CollapsibleCategoryGroups";
+import { PatientRequirementsForm } from "@/components/nutrimatic/PatientRequirementsForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,12 +93,24 @@ function RequirementsForm({
   }, [value, onChange]);
 
   return (
-    <CollapsibleCategoryGroups
-      groups={groups}
-      expanded={expanded}
-      onToggle={(id) => setExpanded((prev) => toggleExpandedId(prev, id))}
-      className="p-0"
-    />
+    <div className="space-y-4">
+      <PatientRequirementsForm
+        onApply={(next) => {
+          onChange(next);
+        }}
+      />
+      <div>
+        <p className="mb-2 text-xs font-medium text-muted-foreground">
+          Metas diarias (editables)
+        </p>
+        <CollapsibleCategoryGroups
+          groups={groups}
+          expanded={expanded}
+          onToggle={(id) => setExpanded((prev) => toggleExpandedId(prev, id))}
+          className="p-0"
+        />
+      </div>
+    </div>
   );
 }
 

@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --port 3010",
     "typecheck": "tsc --noEmit",
+    "test:req": "npx --yes tsx scripts/patient-requirements-selftest.ts",
     "foods:build": "python ../nutrimatic-proyecto/scripts/extract_tpca_2023.py"
   },
   "dependencies": {

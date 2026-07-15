@@ -39,28 +39,10 @@ export const EMPTY_TOTALS: NutrientTotals = {
   cost: 0,
 };
 
-export const DEFAULT_REQUIREMENTS: Requirements = {
-  energy: 1400,
-  proteinTotal: 61,
-  proteinAnimal: 0,
-  proteinVegetal: 0,
-  fatTotal: 44,
-  carbs: 330,
-  fiber: 25,
-  calcium: 1300,
-  phosphorus: 1250,
-  zinc: 11,
-  iron: 11,
-  sodium: 2300,
-  potassium: 4700,
-  vitaminA: 700,
-  retinol: 0,
-  thiamin: 1.2,
-  riboflavin: 1.3,
-  niacin: 16,
-  vitaminC: 75,
-  folicAcid: 400,
-};
+import { EMPTY_REQUIREMENTS } from "./patientRequirements";
+
+/** Sin metas hasta calcular desde el perfil del paciente (o editar a mano). */
+export const DEFAULT_REQUIREMENTS: Requirements = { ...EMPTY_REQUIREMENTS };
 
 function scale(per100: number, grams: number): number {
   return (grams * per100) / 100;
