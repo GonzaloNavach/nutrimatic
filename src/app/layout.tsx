@@ -12,13 +12,18 @@ export const metadata: Metadata = {
   description: "Calculador de planes nutricionales",
 };
 
+const themeInitScript = `(function(){try{var t=localStorage.getItem("nutrimatic-theme");if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={quicksand.className}>{children}</body>
     </html>
   );

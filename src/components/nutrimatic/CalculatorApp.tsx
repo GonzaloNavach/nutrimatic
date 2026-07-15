@@ -2,6 +2,7 @@
 
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { AppMenu } from "@/components/nutrimatic/AppMenu";
 import {
   ColumnLayoutToolbar,
   HiddenColumnsBar,
@@ -12,6 +13,7 @@ import {
   MealContributionLegend,
   NutrientIntakeBar,
 } from "@/components/nutrimatic/NutrientIntakeBar";
+import { ThemeToggle } from "@/components/nutrimatic/ThemeToggle";
 import { PlanSidePanel } from "@/components/nutrimatic/PlanSidePanel";
 import { Button } from "@/components/ui/button";
 import { useMealColumns } from "@/hooks/useMealColumns";
@@ -24,7 +26,7 @@ import {
 import { createDefaultMeals, createSamplePlan } from "@/lib/nutrition/meals";
 import type { Food, MealBlock, Requirements } from "@/lib/nutrition/types";
 import { formatNumber } from "@/lib/utils";
-import { RotateCcw, Scale, Sparkles } from "lucide-react";
+import { RotateCcw, Scale } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface CalculatorAppProps {
@@ -107,20 +109,15 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setMeals(createSamplePlan(foods))}
-                >
-                  <Sparkles className="size-4" />
-                  Cargar ejemplo
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => setMeals(createDefaultMeals())}
                 >
                   <RotateCcw className="size-4" />
                   Limpiar
                 </Button>
+                <ThemeToggle />
+                <AppMenu
+                  onLoadExample={() => setMeals(createSamplePlan(foods))}
+                />
               </>
             }
           />

@@ -22,9 +22,9 @@ interface AdequacyPanelProps {
 }
 
 const statusStyles = {
-  ok: "text-emerald-700 bg-emerald-50 border-emerald-200",
-  low: "text-amber-700 bg-amber-50 border-amber-200",
-  high: "text-rose-700 bg-rose-50 border-rose-200",
+  ok: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-950/50 dark:border-emerald-800",
+  low: "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/50 dark:border-amber-800",
+  high: "text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-300 dark:bg-rose-950/50 dark:border-rose-800",
   na: "text-muted-foreground bg-muted border-border",
 } as const;
 
@@ -128,7 +128,7 @@ function AdequacyGrouped({ rows }: { rows: AdequacyRow[] }) {
         count: items.length,
         trailing:
           alertCount > 0 ? (
-            <span className="shrink-0 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs tabular-nums text-amber-800">
+            <span className="shrink-0 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs tabular-nums text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
               {alertCount} alerta{alertCount !== 1 ? "s" : ""}
             </span>
           ) : undefined,

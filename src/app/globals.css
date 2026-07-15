@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-family-sans: "Quicksand", sans-serif;
   --color-background: #f7f8fa;
@@ -22,6 +24,28 @@
   --color-input: #e9edf3;
   --color-ring: #032622;
   --radius: 0.625rem;
+}
+
+.dark {
+  --color-background: #0c1117;
+  --color-card: #151b24;
+  --color-popover: #151b24;
+  --color-popover-foreground: #e8edf5;
+  --color-foreground: #e8edf5;
+  --color-card-foreground: #e8edf5;
+  --color-primary: #00d868;
+  --color-primary-foreground: #032622;
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #e8edf5;
+  --color-muted: #1a222e;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #1e293b;
+  --color-accent-foreground: #e8edf5;
+  --color-destructive: hsl(0, 72%, 51%);
+  --color-destructive-foreground: #ffffff;
+  --color-border: #2a3444;
+  --color-input: #1e293b;
+  --color-ring: #00d868;
 }
 
 @layer base {
