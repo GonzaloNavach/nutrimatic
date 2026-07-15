@@ -13,8 +13,8 @@ import {
   MealContributionLegend,
   NutrientIntakeBar,
 } from "@/components/nutrimatic/NutrientIntakeBar";
+import { PlanWorkspace } from "@/components/nutrimatic/PlanSidePanel";
 import { ThemeToggle } from "@/components/nutrimatic/ThemeToggle";
-import { PlanSidePanel } from "@/components/nutrimatic/PlanSidePanel";
 import { Button } from "@/components/ui/button";
 import { useMealColumns } from "@/hooks/useMealColumns";
 import {
@@ -158,45 +158,46 @@ export function CalculatorApp({ foods }: CalculatorAppProps) {
             <MealContributionLegend meals={meals} />
           </div>
 
-          <div className="space-y-4">
-            <ColumnLayoutToolbar
-              columnsLocked={columnsLocked}
-              tipSeen={tipSeen}
-              onToggleLock={toggleColumnsLock}
-              onResetColumns={resetColumns}
-            />
-            {columnsEditable ? (
-              <HiddenColumnsBar
-                hiddenColumns={hiddenColumns}
-                onShow={showColumn}
-              />
-            ) : null}
-            {meals.map((meal) => (
-              <MealBlockCard
-                key={meal.id}
-                meal={meal}
-                foods={foods}
-                foodMap={foodMap}
-                visibleColumns={visibleColumns}
-                hiddenColumns={hiddenColumns}
-                columnsEditable={columnsEditable}
-                onHideColumn={hideColumn}
-                onShowColumn={showColumn}
-                onChange={(nextMeal) =>
-                  setMeals((prev) =>
-                    prev.map((item) =>
-                      item.id === nextMeal.id ? nextMeal : item
-                    )
-                  )
-                }
-              />
-            ))}
-          </div>
-
-          <PlanSidePanel
+          <PlanWorkspace
             requirements={requirements}
             onRequirementsChange={setRequirements}
             adequacyRows={adequacyRows}
+            planContent={
+              <>
+                <ColumnLayoutToolbar
+                  columnsLocked={columnsLocked}
+                  tipSeen={tipSeen}
+                  onToggleLock={toggleColumnsLock}
+                  onResetColumns={resetColumns}
+                />
+                {columnsEditable ? (
+                  <HiddenColumnsBar
+                    hiddenColumns={hiddenColumns}
+                    onShow={showColumn}
+                  />
+                ) : null}
+                {meals.map((meal) => (
+                  <MealBlockCard
+                    key={meal.id}
+                    meal={meal}
+                    foods={foods}
+                    foodMap={foodMap}
+                    visibleColumns={visibleColumns}
+                    hiddenColumns={hiddenColumns}
+                    columnsEditable={columnsEditable}
+                    onHideColumn={hideColumn}
+                    onShowColumn={showColumn}
+                    onChange={(nextMeal) =>
+                      setMeals((prev) =>
+                        prev.map((item) =>
+                          item.id === nextMeal.id ? nextMeal : item
+                        )
+                      )
+                    }
+                  />
+                ))}
+              </>
+            }
           />
         </div>
       </div>
