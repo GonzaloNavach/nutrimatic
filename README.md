@@ -18,6 +18,13 @@ npm run dev
 
 Abre http://localhost:3010
 
+## Suscripción (auth + pagos)
+
+- Auth: Supabase — `docs/subscription-setup.md`
+- Cobro PE (Yape): Mercado Pago — `docs/mercadopago-setup.md`
+
+Sin keys de pago, `AUTH_GATE=off` deja la app abierta en local.
+
 ## Qué incluye el MVP
 
 - 6 bloques de comida (como la hoja `Composic`)
