@@ -19,6 +19,8 @@ import { useEffect, useMemo, useState } from "react";
 interface AdequacyPanelProps {
   rows: AdequacyRow[];
   embedded?: boolean;
+  /** Compact stacked rows — no horizontal scroll (for narrow sidebars). */
+  dense?: boolean;
 }
 
 const statusStyles = {
@@ -81,7 +83,50 @@ function AdequacyRowsTable({ rows }: { rows: AdequacyRow[] }) {
   );
 }
 
-function AdequacyGrouped({ rows }: { rows: AdequacyRow[] }) {
+function AdequacyRowsDense({ rows }: { rows: AdequacyRow[] }) {
+  return (
+    <ul className="space-y-2 py-1">
+      {rows.map((row) => (
+        <li
+          key={row.key}
+          className="rounded-lg border border-border/70 bg-card/40 px-3 py-2"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium leading-snug">{row.label}</p>
+            {row.percent !== null ? (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "shrink-0 tabular-nums text-[11px]",
+                  statusStyles[row.status]
+                )}
+              >
+                {formatNumber(row.percent, 0)}% · {statusLabel(row.status)}
+              </Badge>
+            ) : (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
+          </div>
+          <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+            {formatNumber(row.provided, 1)}
+            {row.recommended > 0
+              ? ` / ${formatNumber(row.recommended, 1)}`
+              : ""}{" "}
+            {row.unit}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AdequacyGrouped({
+  rows,
+  dense = false,
+}: {
+  rows: AdequacyRow[];
+  dense?: boolean;
+}) {
   const alertGroupIds = useMemo(() => {
     const ids = new Set<NutrientGroupId>();
     for (const row of rows) {
@@ -132,10 +177,14 @@ function AdequacyGrouped({ rows }: { rows: AdequacyRow[] }) {
               {alertCount} alerta{alertCount !== 1 ? "s" : ""}
             </span>
           ) : undefined,
-        children: <AdequacyRowsTable rows={items} />,
+        children: dense ? (
+          <AdequacyRowsDense rows={items} />
+        ) : (
+          <AdequacyRowsTable rows={items} />
+        ),
       };
     }).filter((g) => g.count > 0);
-  }, [rows]);
+  }, [rows, dense]);
 
   return (
     <CollapsibleCategoryGroups
@@ -147,14 +196,18 @@ function AdequacyGrouped({ rows }: { rows: AdequacyRow[] }) {
   );
 }
 
-export function AdequacyPanel({ rows, embedded = false }: AdequacyPanelProps) {
+export function AdequacyPanel({
+  rows,
+  embedded = false,
+  dense = false,
+}: AdequacyPanelProps) {
   if (embedded) {
     return (
-      <div>
+      <div className="min-w-0">
         <h3 className="mb-3 text-base font-semibold">
           Porcentaje de adecuación
         </h3>
-        <AdequacyGrouped rows={rows} />
+        <AdequacyGrouped rows={rows} dense={dense} />
       </div>
     );
   }
@@ -165,7 +218,7 @@ export function AdequacyPanel({ rows, embedded = false }: AdequacyPanelProps) {
         <CardTitle className="text-base">Porcentaje de adecuación</CardTitle>
       </CardHeader>
       <CardContent>
-        <AdequacyGrouped rows={rows} />
+        <AdequacyGrouped rows={rows} dense={dense} />
       </CardContent>
     </Card>
   );
