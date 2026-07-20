@@ -118,67 +118,46 @@ export function PatientRequirementsForm({
         </FieldGroup>
 
         <FieldGroup title="Antropometría">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Peso (kg)" htmlFor="pat-weight">
-              <Input
-                id="pat-weight"
-                type="number"
-                min={1}
-                max={400}
-                step="0.1"
-                value={profile.weightKg ?? ""}
-                onChange={(e) =>
-                  patch({
-                    weightKg: e.target.value
-                      ? Number.parseFloat(e.target.value)
-                      : null,
-                  })
-                }
-              />
-            </Field>
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Peso (kg)" htmlFor="pat-weight">
+                <Input
+                  id="pat-weight"
+                  type="number"
+                  min={1}
+                  max={400}
+                  step="0.1"
+                  value={profile.weightKg ?? ""}
+                  onChange={(e) =>
+                    patch({
+                      weightKg: e.target.value
+                        ? Number.parseFloat(e.target.value)
+                        : null,
+                    })
+                  }
+                />
+              </Field>
 
-            <Field label="Talla (cm)" htmlFor="pat-height">
-              <Input
-                id="pat-height"
-                type="number"
-                min={40}
-                max={250}
-                step={1}
-                value={profile.heightCm ?? ""}
-                onChange={(e) =>
-                  patch({
-                    heightCm: e.target.value
-                      ? Number.parseFloat(e.target.value)
-                      : null,
-                  })
-                }
-              />
-            </Field>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="pat-imc">IMC</Label>
-              <div
-                id="pat-imc"
-                aria-live="polite"
-                className={cn(
-                  "flex h-9 items-center rounded-md border border-dashed border-input bg-muted/30 px-3 text-sm tabular-nums",
-                  imc == null && "text-muted-foreground"
-                )}
-              >
-                {imc != null ? (
-                  <span className="flex w-full items-baseline justify-between gap-2">
-                    <span className="font-semibold text-foreground">
-                      {formatNumber(imc, 1)}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {imcCategoryLabel(imc)}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-xs">Peso + talla</span>
-                )}
-              </div>
+              <Field label="Talla (cm)" htmlFor="pat-height">
+                <Input
+                  id="pat-height"
+                  type="number"
+                  min={40}
+                  max={250}
+                  step={1}
+                  value={profile.heightCm ?? ""}
+                  onChange={(e) =>
+                    patch({
+                      heightCm: e.target.value
+                        ? Number.parseFloat(e.target.value)
+                        : null,
+                    })
+                  }
+                />
+              </Field>
             </div>
+
+            <ImcBand imc={imc} />
           </div>
         </FieldGroup>
 
@@ -367,6 +346,64 @@ export function PatientRequirementsForm({
           {error}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function imcBandTone(imc: number): string {
+  if (imc < 18.5) {
+    return "border-sky-500/30 bg-sky-500/10 text-sky-900 dark:text-sky-100";
+  }
+  if (imc < 25) {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100";
+  }
+  if (imc < 30) {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-100";
+  }
+  return "border-rose-500/30 bg-rose-500/10 text-rose-950 dark:text-rose-100";
+}
+
+function ImcBand({ imc }: { imc: number | null }) {
+  if (imc == null) {
+    return (
+      <div
+        id="pat-imc"
+        aria-live="polite"
+        className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-input bg-muted/20 px-3 py-2.5"
+      >
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            IMC
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Completá peso y talla
+          </p>
+        </div>
+        <span className="text-lg font-semibold tabular-nums text-muted-foreground/50">
+          —
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      id="pat-imc"
+      aria-live="polite"
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5",
+        imcBandTone(imc)
+      )}
+    >
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-wider opacity-70">
+          IMC
+        </p>
+        <p className="mt-0.5 text-sm font-medium">{imcCategoryLabel(imc)}</p>
+      </div>
+      <span className="text-2xl font-semibold tabular-nums tracking-tight">
+        {formatNumber(imc, 1)}
+      </span>
     </div>
   );
 }
