@@ -1,32 +1,24 @@
 # QA — Perfil clínico completo (paciente)
 
-## Checklist
+Feature: antropometría extendida, motivo clínico, laboratorio, fórmulas TMB, ajustes de metas.
 
-| # | Criterio | Resultado |
-|---|----------|-----------|
-| 1 | Formulario: sexo, edad, peso, talla, CA, cadera, IMC, riesgo CA INS | ✓ |
-| 2 | Motivo clínico (9 opciones) separado de ajuste energético | ✓ |
-| 3 | PA sistólica/diastólica opcional | ✓ |
-| 4 | Pruebas químicas (11 analitos + fecha) plegables | ✓ |
-| 5 | Opciones avanzadas: fórmula TMB (5), gestación, CENAN | ✓ |
-| 6 | Contexto clínico en vivo (flags, guía) antes de calcular | ✓ |
-| 7 | Calcular → metas + panel clínico + notas de ajuste | ✓ |
-| 8 | Ajustes numéricos: glucémico (−carbos, +fibra), lipídico (−grasa), renal (prot), HTA (sodio) | ✓ (`npm run test:req`) |
-| 9 | Multi-fórmula: Schofield, Mifflin, Harris, Owen, kcal/kg | ✓ |
-| 10 | `npm run typecheck` limpio | ✓ |
+| # | Punto | Estado |
+|---|--------|--------|
+| 1 | Formulario: CA, cadera, PA, motivo del plan (≠ solo peso) | ✓ |
+| 2 | Banda CA con riesgo INS en vivo | ✓ |
+| 3 | Acordeón laboratorio (11 analitos + fecha) | ✓ |
+| 4 | Fórmulas: Schofield, Mifflin, Harris, Owen, kcal/kg | ✓ |
+| 5 | Motivo clínico sugiere ajuste energético | ✓ |
+| 6 | Calcular → metas + panel Contexto clínico | ✓ |
+| 7 | Lab glucémico reduce carbos / sube fibra | ✓ (`npm run test:req`) |
+| 8 | Lab lipídico ajusta grasa al 25% | ✓ |
+| 9 | Creatinina alta limita proteína | ✓ |
+| 10 | HTA limita sodio ≤2000 mg | ✓ |
+| 11 | Typecheck sin errores | ✓ |
 
-## Comandos
+## Probar en UI (30 s)
 
-```
-npm run typecheck
-npm run test:req
-```
-
-## Evidencia
-
-- `metas-calculadas.png` — mujer 28a, CA 82, motivo glucémico, metas + contexto clínico.
-
-## Revisión manual sugerida
-
-- Abrir «Pruebas químicas», cargar HbA1c 6.8 y recalcular → ver fibra ≥28 g y guía glucémica.
-- Cambiar fórmula a Mifflin en avanzadas → comparar TMB en detalle del cálculo.
+1. `npm run dev` → http://localhost:3010
+2. Tab **Requerimientos** → completar sexo, edad, peso, talla, CA 88 (mujer)
+3. Motivo: **Control glucémico** → cargar HbA1c 7,2
+4. **Calcular requerimientos** → ver Contexto clínico + metas ajustadas

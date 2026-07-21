@@ -76,19 +76,23 @@ export interface PatientProfile {
 
 const emptyLabValue = (): LabValue => ({ value: null, date: null });
 
-export const DEFAULT_LAB_PANEL: PatientLabPanel = {
-  fastingGlucose: emptyLabValue(),
-  hba1c: emptyLabValue(),
-  totalCholesterol: emptyLabValue(),
-  ldl: emptyLabValue(),
-  hdl: emptyLabValue(),
-  triglycerides: emptyLabValue(),
-  creatinine: emptyLabValue(),
-  uricAcid: emptyLabValue(),
-  alt: emptyLabValue(),
-  hemoglobin: emptyLabValue(),
-  tsh: emptyLabValue(),
-};
+export function createEmptyLabPanel(): PatientLabPanel {
+  return {
+    fastingGlucose: emptyLabValue(),
+    hba1c: emptyLabValue(),
+    totalCholesterol: emptyLabValue(),
+    ldl: emptyLabValue(),
+    hdl: emptyLabValue(),
+    triglycerides: emptyLabValue(),
+    creatinine: emptyLabValue(),
+    uricAcid: emptyLabValue(),
+    alt: emptyLabValue(),
+    hemoglobin: emptyLabValue(),
+    tsh: emptyLabValue(),
+  };
+}
+
+export const DEFAULT_LAB_PANEL: PatientLabPanel = createEmptyLabPanel();
 
 export const DEFAULT_PATIENT_PROFILE: PatientProfile = {
   sex: "",
@@ -109,7 +113,7 @@ export const DEFAULT_PATIENT_PROFILE: PatientProfile = {
   lactationSemester: 1,
   bioavailability: "moderate",
   residence: "urban",
-  lab: DEFAULT_LAB_PANEL,
+  lab: createEmptyLabPanel(),
 };
 
 export const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
