@@ -1,10 +1,21 @@
 /**
  * Calcula Requirements a partir del perfil del paciente.
- * Energía: Schofield (FAO/WHO) × PAL × objetivo (+ gestación/lactancia).
+ * Energía: fórmula seleccionada × PAL × objetivo (+ gestación/lactancia).
  * Fallback: tablas CENAN poblacionales si falta peso.
  * Micros: tablas CENAN/INS.
+ * Ajustes clínicos: laboratorio + motivo del plan.
  */
 
+import {
+  applyClinicalRequirementAdjustments,
+  buildClinicalContext,
+  type ClinicalContext,
+} from "./clinicalContext";
+import {
+  BMR_FORMULA_LABELS,
+  computeBmr,
+  computeKcalPerKgTotal,
+} from "./bmrFormulas";
 import {
   LACTATION_KCAL_ADDON,
   lookupCenanPopulationEnergy,
@@ -13,11 +24,14 @@ import {
 import { lookupCenanMicronutrients } from "./cenanMicronutrients";
 import type {
   ActivityLevel,
+  BmrFormula,
   EnergyGoal,
   PatientProfile,
   Sex,
 } from "./patientProfile";
 import type { Requirements } from "./types";
+
+export { schofieldBmr } from "./bmrFormulas";
 
 export const EMPTY_REQUIREMENTS: Requirements = {
   energy: 0,
@@ -55,14 +69,17 @@ const GOAL_FACTOR: Record<EnergyGoal, number> = {
   surplus: 1.1,
 };
 
-export type EnergyCalcSource = "schofield" | "cenan_table";
+export type EnergyCalcSource = "formula" | "cenan_table" | "kcal_per_kg";
 
 export interface RequirementCalcMeta {
   bmr: number | null;
   pal: number | null;
   teeBeforeAdjust: number | null;
   energySource: EnergyCalcSource;
+  bmrFormula: BmrFormula;
+  bmrFormulaLabel: string;
   imc: number | null;
+  clinicalContext: ClinicalContext;
   notes: string[];
   errors: string[];
 }
@@ -71,36 +88,6 @@ export interface RequirementCalculation {
   ok: boolean;
   requirements: Requirements;
   meta: RequirementCalcMeta;
-}
-
-/**
- * TMB Schofield 1985 (kcal/día), peso en kg.
- * FAO/WHO/UNU — base metodológica usada en lineamientos CENAN.
- */
-export function schofieldBmr(
-  sex: Sex,
-  ageYears: number,
-  weightKg: number
-): number {
-  const w = weightKg;
-  const male = sex === "male";
-
-  if (ageYears < 3) {
-    return male ? 60.9 * w - 54 : 61.0 * w - 51;
-  }
-  if (ageYears < 10) {
-    return male ? 22.7 * w + 495 : 22.5 * w + 499;
-  }
-  if (ageYears < 18) {
-    return male ? 17.686 * w + 658.2 : 13.384 * w + 692.6;
-  }
-  if (ageYears < 30) {
-    return male ? 15.057 * w + 692.2 : 14.818 * w + 486.6;
-  }
-  if (ageYears < 60) {
-    return male ? 11.472 * w + 873.1 : 8.126 * w + 845.6;
-  }
-  return male ? 11.711 * w + 587.7 : 9.082 * w + 658.5;
 }
 
 function proteinGPerKg(
@@ -169,12 +156,20 @@ export function canCalculateRequirements(profile: PatientProfile): {
   if (!hasWeight && !canUseTable) {
     missing.push("peso (o edad ≥12 para tabla CENAN)");
   }
+  if (
+    profile.bmrFormula === "kcal_per_kg" &&
+    hasWeight &&
+    (profile.kcalPerKg <= 0 || profile.kcalPerKg > 60)
+  ) {
+    missing.push("kcal/kg válido (1–60)");
+  }
   return { ready: missing.length === 0, missing };
 }
 
 export function calculatePatientRequirements(
   profile: PatientProfile
 ): RequirementCalculation {
+  const clinicalContext = buildClinicalContext(profile);
   const notes: string[] = [];
   const errors: string[] = [];
   const gate = canCalculateRequirements(profile);
@@ -186,8 +181,11 @@ export function calculatePatientRequirements(
         bmr: null,
         pal: null,
         teeBeforeAdjust: null,
-        energySource: "schofield",
+        energySource: "formula",
+        bmrFormula: profile.bmrFormula,
+        bmrFormulaLabel: BMR_FORMULA_LABELS[profile.bmrFormula],
         imc: null,
+        clinicalContext,
         notes,
         errors: [`Faltan: ${gate.missing.join(", ")}`],
       },
@@ -200,6 +198,7 @@ export function calculatePatientRequirements(
   const height = profile.heightCm;
   const pal = PAL_BY_ACTIVITY[profile.activity];
   const goalFactor = GOAL_FACTOR[profile.goal];
+  const formula = profile.bmrFormula;
 
   let imc: number | null = null;
   if (weight != null && weight > 0 && height != null && height > 0) {
@@ -209,13 +208,46 @@ export function calculatePatientRequirements(
 
   let bmr: number | null = null;
   let teeBeforeAdjust: number | null = null;
-  let energySource: EnergyCalcSource = "schofield";
+  let energySource: EnergyCalcSource = "formula";
   let energy = 0;
 
   if (weight != null && weight > 0) {
-    bmr = schofieldBmr(sex, age, weight);
-    teeBeforeAdjust = bmr * pal;
-    energy = teeBeforeAdjust;
+    if (formula === "kcal_per_kg") {
+      energy = computeKcalPerKgTotal(weight, profile.kcalPerKg);
+      teeBeforeAdjust = energy;
+      energySource = "kcal_per_kg";
+      notes.push(
+        `Energía: ${profile.kcalPerKg} kcal/kg × ${weight} kg = ${round0(energy)} kcal (sin PAL adicional).`
+      );
+    } else {
+      const bmrResult = computeBmr(formula, sex, age, weight, height);
+      if (bmrResult.error) {
+        errors.push(bmrResult.error);
+        return {
+          ok: false,
+          requirements: EMPTY_REQUIREMENTS,
+          meta: {
+            bmr: null,
+            pal,
+            teeBeforeAdjust: null,
+            energySource: "formula",
+            bmrFormula: formula,
+            bmrFormulaLabel: BMR_FORMULA_LABELS[formula],
+            imc,
+            clinicalContext,
+            notes,
+            errors,
+          },
+        };
+      }
+      bmr = bmrResult.bmr!;
+      teeBeforeAdjust = bmr * pal;
+      energy = teeBeforeAdjust;
+      energySource = "formula";
+      notes.push(
+        `Energía: TMB ${BMR_FORMULA_LABELS[formula]} × PAL ${pal}.`
+      );
+    }
 
     if (profile.physioState === "pregnancy" && sex === "female") {
       const add = PREGNANCY_KCAL_ADDON[profile.pregnancyTrimester];
@@ -243,9 +275,6 @@ export function calculatePatientRequirements(
         );
       }
     }
-
-    energySource = "schofield";
-    notes.push("Energía: TMB Schofield × PAL (FAO/WHO).");
   } else {
     const table = lookupCenanPopulationEnergy({
       sex,
@@ -268,7 +297,10 @@ export function calculatePatientRequirements(
           pal,
           teeBeforeAdjust: null,
           energySource: "cenan_table",
+          bmrFormula: formula,
+          bmrFormulaLabel: BMR_FORMULA_LABELS[formula],
           imc,
+          clinicalContext,
           notes,
           errors,
         },
@@ -314,7 +346,7 @@ export function calculatePatientRequirements(
     sex
   );
 
-  const requirements: Requirements = {
+  let requirements: Requirements = {
     ...EMPTY_REQUIREMENTS,
     energy: round0(energy),
     ...macros,
@@ -332,16 +364,27 @@ export function calculatePatientRequirements(
     folicAcid: micros.folicAcid,
   };
 
+  const clinicalAdj = applyClinicalRequirementAdjustments(
+    requirements,
+    profile,
+    weight
+  );
+  requirements = clinicalAdj.requirements;
+  notes.push(...clinicalAdj.notes);
+
   return {
     ok: true,
     requirements,
     meta: {
       bmr: bmr != null ? round0(bmr) : null,
-      pal,
+      pal: formula === "kcal_per_kg" ? null : pal,
       teeBeforeAdjust:
         teeBeforeAdjust != null ? round0(teeBeforeAdjust) : null,
       energySource,
+      bmrFormula: formula,
+      bmrFormulaLabel: BMR_FORMULA_LABELS[formula],
       imc,
+      clinicalContext,
       notes,
       errors,
     },

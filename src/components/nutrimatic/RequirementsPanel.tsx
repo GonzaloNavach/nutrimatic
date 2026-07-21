@@ -4,6 +4,7 @@ import {
   CollapsibleCategoryGroups,
   toggleExpandedId,
 } from "@/components/nutrimatic/CollapsibleCategoryGroups";
+import { ClinicalContextPanel } from "@/components/nutrimatic/ClinicalContextPanel";
 import { PatientRequirementsForm } from "@/components/nutrimatic/PatientRequirementsForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,6 +173,13 @@ function RequirementsForm({
 
       <RequirementsKpiReadonly value={value} meta={calcMeta} />
 
+      {calcMeta?.clinicalContext ? (
+        <ClinicalContextPanel
+          context={calcMeta.clinicalContext}
+          calcNotes={calcMeta.notes}
+        />
+      ) : null}
+
       <div className="rounded-md border">
         <button
           type="button"
@@ -260,14 +268,26 @@ function RequirementsKpiReadonly({
       </div>
       {meta && meta.errors.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {meta.energySource === "schofield" ? (
+          {meta.energySource === "formula" ? (
             <>
-              TMB {meta.bmr} kcal · PAL {meta.pal} · GET≈{meta.teeBeforeAdjust}{" "}
-              kcal
+              {meta.bmrFormulaLabel}
+              {meta.bmr != null ? ` · TMB ${meta.bmr} kcal` : ""}
+              {meta.pal != null ? ` · PAL ${meta.pal}` : ""}
+              {meta.teeBeforeAdjust != null
+                ? ` · GET≈${meta.teeBeforeAdjust} kcal`
+                : ""}
+              {meta.imc != null ? ` · IMC ${meta.imc}` : ""}
+            </>
+          ) : meta.energySource === "kcal_per_kg" ? (
+            <>
+              {meta.bmrFormulaLabel}
+              {meta.teeBeforeAdjust != null
+                ? ` · GET≈${meta.teeBeforeAdjust} kcal`
+                : ""}
               {meta.imc != null ? ` · IMC ${meta.imc}` : ""}
             </>
           ) : (
-            <>Energía desde tabla CENAN</>
+            <>Energía desde tabla CENAN · {meta.bmrFormulaLabel}</>
           )}
         </p>
       ) : null}
